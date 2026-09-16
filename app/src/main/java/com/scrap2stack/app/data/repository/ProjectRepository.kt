@@ -65,7 +65,7 @@ class ProjectRepository(private val apiService: ApiService) {
     ): Response<BaseResponse<CollaborationRequestDto>> {
         return apiService.sendCollaborationRequest(
             projectId,
-            SendCollabRequest(receiverId, proposedRole, message)
+            SendCollabRequest(projectId, receiverId, proposedRole, message)
         )
     }
 

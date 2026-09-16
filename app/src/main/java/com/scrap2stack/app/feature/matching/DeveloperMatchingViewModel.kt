@@ -2,47 +2,42 @@ package com.scrap2stack.app.feature.matching
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scrap2stack.app.core.network.RetrofitClient
-import com.scrap2stack.app.data.remote.dto.MatchResultDto
-import com.scrap2stack.app.data.repository.ProjectRepository
+import com.scrap2stack.app.domain.model.DeveloperMatch
+import com.scrap2stack.app.domain.usecase.GetDeveloperMatchesUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed class MatchingState {
-    object Idle : MatchingState()
-    object Loading : MatchingState()
-    data class Success(val matches: List<MatchResultDto>) : MatchingState()
-    object Empty : MatchingState()
-    data class Error(val message: String) : MatchingState()
+sealed class MatchingUiState {
+    object Idle : MatchingUiState()
+    object Loading : MatchingUiState()
+    data class Success(val matches: List<DeveloperMatch>) : MatchingUiState()
+    object Empty : MatchingUiState()
+    data class Error(val message: String) : MatchingUiState()
 }
 
 class DeveloperMatchingViewModel(
-    private val repository: ProjectRepository = ProjectRepository(RetrofitClient.apiService)
+    private val getDeveloperMatchesUseCase: GetDeveloperMatchesUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<MatchingState>(MatchingState.Idle)
-    val uiState: StateFlow<MatchingState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<MatchingUiState>(MatchingUiState.Idle)
+    val uiState: StateFlow<MatchingUiState> = _uiState.asStateFlow()
 
     fun loadMatches(projectId: String) {
         viewModelScope.launch {
-            _uiState.value = MatchingState.Loading
-            try {
-                val response = repository.getDeveloperMatches(projectId)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val matches = response.body()?.data?.matches ?: emptyList()
+            _uiState.value = MatchingUiState.Loading
+            getDeveloperMatchesUseCase(projectId)
+                .onSuccess { matches ->
                     if (matches.isEmpty()) {
-                        _uiState.value = MatchingState.Empty
+                        _uiState.value = MatchingUiState.Empty
                     } else {
-                        _uiState.value = MatchingState.Success(matches)
+                        _uiState.value = MatchingUiState.Success(matches)
                     }
-                } else {
-                    _uiState.value = MatchingState.Error(response.body()?.message ?: "Failed to load matches")
                 }
-            } catch (e: Exception) {
-                _uiState.value = MatchingState.Error("Network error: ${e.localizedMessage}")
-            }
+                .onFailure { error ->
+                    _uiState.value = MatchingUiState.Error(error.message ?: "Failed to load matches")
+                }
         }
     }
 }

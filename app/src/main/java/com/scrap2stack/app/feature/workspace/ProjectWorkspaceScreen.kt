@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.ErrorView
 import com.scrap2stack.app.core.ui.components.LoadingView
-import com.scrap2stack.app.feature.charms.CharmsScreen
+import com.scrap2stack.app.feature.project.TeamScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,8 +31,7 @@ fun ProjectWorkspaceScreen(
         WorkspaceTab("Tasks", Icons.AutoMirrored.Filled.List),
         WorkspaceTab("Roadmap", Icons.Default.Map),
         WorkspaceTab("GitHub", Icons.Default.Code),
-        WorkspaceTab("Team", Icons.Default.Group),
-        WorkspaceTab("Charms", Icons.Default.Stars)
+        WorkspaceTab("Team", Icons.Default.Group)
     )
 
     LaunchedEffect(projectId) {
@@ -45,9 +44,6 @@ fun ProjectWorkspaceScreen(
                 title = { 
                     Column {
                         Text("Project Workspace", style = MaterialTheme.typography.titleMedium)
-                        if (uiState is WorkspaceState.Success) {
-                            Text((uiState as WorkspaceState.Success).workspace.name, style = MaterialTheme.typography.labelSmall)
-                        }
                     }
                 },
                 navigationIcon = {
@@ -76,14 +72,27 @@ fun ProjectWorkspaceScreen(
                 is WorkspaceState.Error -> ErrorView(message = state.message, onRetry = { viewModel.loadWorkspaceData(projectId) })
                 is WorkspaceState.Success -> {
                     when (selectedTab) {
-                        0 -> WorkspaceDashboard(state.workspace, onNavigateToMatches = onNavigateToMatches)
-                        1 -> TasksScreen(projectId, state.tasks, onStatusUpdate = { taskId, status -> 
-                            viewModel.updateTaskStatus(taskId, status, projectId)
-                        })
-                        2 -> RoadmapScreen(projectId, state.roadmap)
-                        3 -> GithubActivityScreen(projectId, contributions = state.contributions, onSync = { viewModel.syncGitHub(projectId) })
+                        0 -> WorkspaceDashboard(
+                            tasksCount = state.tasks.size,
+                            completedTasksCount = state.tasks.count { it.status == "COMPLETED" },
+                            membersCount = state.members.size,
+                            onNavigateToMatches = onNavigateToMatches
+                        )
+                        1 -> TasksScreen(
+                            projectId = projectId,
+                            tasks = state.tasks,
+                            onStatusUpdate = { taskId, status -> 
+                                viewModel.updateTaskStatus(taskId, status, projectId)
+                            }
+                        )
+                        2 -> RoadmapScreen(
+                            projectId = projectId,
+                            roadmapItems = state.roadmapItems
+                        )
+                        3 -> GithubActivityScreen(
+                            projectId = projectId
+                        )
                         4 -> TeamView(projectId)
-                        5 -> CharmsScreen(onNavigateBack = null)
                     }
                 }
             }
@@ -95,7 +104,7 @@ data class WorkspaceTab(val title: String, val icon: ImageVector)
 
 @Composable
 fun TeamView(projectId: String) {
-    com.scrap2stack.app.feature.project.TeamScreen(
+    TeamScreen(
         projectId = projectId,
         onNavigateBack = {},
         onInviteDeveloper = {}

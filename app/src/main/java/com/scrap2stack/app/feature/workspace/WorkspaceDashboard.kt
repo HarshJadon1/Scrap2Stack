@@ -4,26 +4,28 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.Scrap2StackCard
 import com.scrap2stack.app.core.ui.components.SectionHeader
-import com.scrap2stack.app.data.remote.dto.WorkspaceDto
 
 @Composable
 fun WorkspaceDashboard(
-    workspace: WorkspaceDto,
+    tasksCount: Int = 0,
+    completedTasksCount: Int = 0,
+    membersCount: Int = 0,
     onNavigateToMatches: () -> Unit = {}
 ) {
+    val progressPercent = if (tasksCount > 0) (completedTasksCount * 100) / tasksCount else 0
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -40,18 +42,18 @@ fun WorkspaceDashboard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Overall Progress", style = MaterialTheme.typography.titleMedium)
-                    Text("${workspace.progress.toInt()}%", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text("Tasks Progress", style = MaterialTheme.typography.titleMedium)
+                    Text("$progressPercent%", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
-                    progress = { (workspace.progress / 100).toFloat() },
+                    progress = { if (tasksCount > 0) completedTasksCount.toFloat() / tasksCount else 0f },
                     modifier = Modifier.fillMaxWidth(),
-                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                    strokeCap = StrokeCap.Round
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Current Phase: ${workspace.currentPhase}",
+                    text = "$completedTasksCount of $tasksCount tasks completed • $membersCount team members",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
@@ -60,23 +62,7 @@ fun WorkspaceDashboard(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("Project Status", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Surface(
-            modifier = Modifier.padding(vertical = 8.dp),
-            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f),
-            shape = MaterialTheme.shapes.small
-        ) {
-            Text(
-                text = workspace.status,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.secondary
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // AI Recommendation (Mocked logic but styled for real data integration)
+        // AI Recommendation
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium,
@@ -89,12 +75,12 @@ fun WorkspaceDashboard(
                     Text("ScrapAI Suggestion", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 }
                 Text(
-                    text = "Based on current progress, you should focus on finalizing the API documentation to improve onboarding for new contributors.",
+                    text = "Keep completing tasks in your workspace to earn Charms and boost your revival score!",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 TextButton(onClick = onNavigateToMatches, contentPadding = PaddingValues(0.dp)) {
-                    Text("View Recommended Matches")
+                    Text("View Recommended Developer Matches")
                 }
             }
         }

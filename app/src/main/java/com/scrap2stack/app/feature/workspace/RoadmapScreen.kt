@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.*
@@ -14,16 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.scrap2stack.app.core.ui.components.Scrap2StackButton
 import com.scrap2stack.app.core.ui.components.Scrap2StackCard
 import com.scrap2stack.app.core.ui.components.SectionHeader
 import com.scrap2stack.app.data.remote.dto.RoadmapItemDto
-import com.scrap2stack.app.data.remote.dto.RoadmapResponse
 
 @Composable
 fun RoadmapScreen(
     projectId: String,
-    roadmapResponse: RoadmapResponse?
+    roadmapItems: List<RoadmapItemDto>
 ) {
     Column(
         modifier = Modifier
@@ -32,40 +29,17 @@ fun RoadmapScreen(
     ) {
         SectionHeader(title = "Project Roadmap")
 
-        if (roadmapResponse == null) {
-            Scrap2StackButton(
-                text = "Generate with ScrapAI",
-                onClick = { /* Trigger AI Generation via ViewModel */ },
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            
+        if (roadmapItems.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No roadmap exists for this project yet.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text("No roadmap items exist for this project yet.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             }
         } else {
-            if (roadmapResponse.roadmap.generatedByAI) {
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
-                    shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("AI Generated", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            }
-
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                items(roadmapResponse.items.sortedBy { it.order }) { item ->
+                items(roadmapItems.sortedBy { it.order }) { item ->
                     RoadmapPhaseCard(item)
                 }
             }

@@ -2,7 +2,9 @@ package com.scrap2stack.app.feature.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -21,28 +23,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.*
-import com.scrap2stack.app.data.local.MockData
-import com.scrap2stack.app.data.remote.dto.ProjectDto
-import com.scrap2stack.app.data.remote.dto.ProjectRecommendationDto
+import com.scrap2stack.app.domain.model.Developer
+import com.scrap2stack.app.domain.model.Project
 
-/**
- * HomeScreen displays personalized project recommendations and trending projects.
- * 
- * PHASE 7: Integrated Recommendation Engine and Advanced ScrapAI metrics.
- */
 @Composable
 fun HomeScreen(
+    viewModel: HomeViewModel,
     onNavigateToProjectDetails: (String) -> Unit,
-    onNavigateToCharms: () -> Unit,
-    viewModel: HomeViewModel = viewModel()
+    onNavigateToCharms: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
-            HomeHeader()
+            val user = (uiState as? HomeUiState.Success)?.user
+            HomeHeader(user)
         }
     ) { innerPadding ->
         when (val state = uiState) {
@@ -59,6 +55,7 @@ fun HomeScreen(
             is HomeUiState.Success -> {
                 HomeContent(
                     innerPadding = innerPadding,
+                    user = state.user,
                     recommendedProjects = state.recommendedProjects,
                     trendingProjects = state.trendingProjects,
                     onNavigateToProjectDetails = onNavigateToProjectDetails,
@@ -72,8 +69,9 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     innerPadding: PaddingValues,
-    recommendedProjects: List<ProjectRecommendationDto>,
-    trendingProjects: List<ProjectDto>,
+    user: Developer?,
+    recommendedProjects: List<Project>,
+    trendingProjects: List<Project>,
     onNavigateToProjectDetails: (String) -> Unit,
     onNavigateToCharms: () -> Unit
 ) {
@@ -86,48 +84,59 @@ private fun HomeContent(
     ) {
         item {
             CharmSummary(
-                charms = MockData.currentDeveloper.charms,
+                charms = user?.charms ?: 0,
                 onClick = onNavigateToCharms
             )
         }
 
-        // PHASE 7: Recommended For You Section
         if (recommendedProjects.isNotEmpty()) {
             item {
                 SectionHeader(title = "Recommended For You")
             }
-            items(recommendedProjects) { recommendation ->
+            items(recommendedProjects) { project ->
                 RecommendedProjectCard(
-                    recommendation = recommendation,
-                    onClick = { onNavigateToProjectDetails(recommendation.project.id) }
+                    project = project,
+                    onClick = { onNavigateToProjectDetails(project.id) }
                 )
             }
         }
 
-        item {
-            SectionHeader(title = "Projects You Can Revive")
-        }
+        if (trendingProjects.isNotEmpty()) {
+            item {
+                SectionHeader(title = "Projects You Can Revive")
+            }
 
-        items(trendingProjects) { project ->
-            ProjectDtoCard(
-                project = project,
-                onClick = { onNavigateToProjectDetails(project.id) }
-            )
-        }
+            items(trendingProjects) { project ->
+                ProjectCard(
+                    project = project,
+                    onClick = { onNavigateToProjectDetails(project.id) }
+                )
+            }
 
-        item {
-            SectionHeader(title = "High Revival Potential")
-        }
+            item {
+                SectionHeader(title = "High Revival Potential")
+            }
 
-        item {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(trendingProjects.sortedByDescending { it.revivalScore }) { project ->
-                    CompactProjectDtoCard(
-                        project = project,
-                        onClick = { onNavigateToProjectDetails(project.id) }
+            item {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(trendingProjects.sortedByDescending { it.revivalScore }) { project ->
+                        CompactProjectCard(
+                            project = project,
+                            onClick = { onNavigateToProjectDetails(project.id) }
+                        )
+                    }
+                }
+            }
+        } else if (recommendedProjects.isEmpty()) {
+            item {
+                Box(modifier = Modifier.fillParentMaxHeight(0.5f), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "No projects available to discover yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -141,11 +150,9 @@ private fun HomeContent(
 
 @Composable
 fun RecommendedProjectCard(
-    recommendation: ProjectRecommendationDto,
+    project: Project,
     onClick: () -> Unit
 ) {
-    val project = recommendation.project
-    
     Scrap2StackCard(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -176,7 +183,7 @@ fun RecommendedProjectCard(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "${recommendation.matchPercentage}% Match",
+                        text = "Great Match",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -203,113 +210,21 @@ fun RecommendedProjectCard(
             )
             
             Text(
-                text = recommendation.why,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            @OptIn(ExperimentalLayoutApi::class)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                recommendation.requiredSkills.take(4).forEach { skill ->
-                    SkillChip(skill = skill)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ProjectDtoCard(
-    project: ProjectDto,
-    onClick: () -> Unit
-) {
-    Scrap2StackCard(
-        modifier = Modifier.padding(vertical = 8.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .clickable { onClick() }
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = project.name,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = project.technologies.joinToString(" • "),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                
-                StatusChip(status = project.status, color = Color.Gray)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
                 text = project.description,
                 style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.padding(vertical = 4.dp),
+                maxLines = 2
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                project.requiredSkills.take(3).forEach { skill ->
-                    SkillChip(skill = skill)
-                }
-            }
-
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState())
             ) {
-                Column {
-                    Text(
-                        text = "Revival Potential",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        text = "${project.revivalScore}%",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
-                
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "Difficulty",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        text = project.difficulty,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                project.requiredSkills.take(4).forEach { skill ->
+                    SkillChip(skill = skill)
                 }
             }
         }
@@ -317,8 +232,8 @@ fun ProjectDtoCard(
 }
 
 @Composable
-fun CompactProjectDtoCard(
-    project: ProjectDto,
+fun CompactProjectCard(
+    project: Project,
     onClick: () -> Unit
 ) {
     Surface(
@@ -354,7 +269,7 @@ fun CompactProjectDtoCard(
 }
 
 @Composable
-fun HomeHeader() {
+fun HomeHeader(user: Developer?) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -369,14 +284,14 @@ fun HomeHeader() {
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )
             Text(
-                text = MockData.currentDeveloper.name,
+                text = user?.name ?: "User",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
             )
         }
-        Avatar(name = MockData.currentDeveloper.name, modifier = Modifier.size(48.dp))
+        Avatar(name = user?.name ?: "U", modifier = Modifier.size(48.dp))
     }
 }
 
@@ -408,7 +323,7 @@ fun CharmSummary(charms: Int, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Lvl 5 Developer • Top 10%",
+                    text = "Your contribution reputation",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
                 )

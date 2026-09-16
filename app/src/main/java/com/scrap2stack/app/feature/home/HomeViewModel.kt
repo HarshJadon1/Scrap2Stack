@@ -2,10 +2,12 @@ package com.scrap2stack.app.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scrap2stack.app.core.network.RetrofitClient
 import com.scrap2stack.app.data.remote.dto.ProjectDto
 import com.scrap2stack.app.data.remote.dto.ProjectRecommendationDto
-import com.scrap2stack.app.data.repository.ProjectRepository
+import com.scrap2stack.app.domain.model.Developer
+import com.scrap2stack.app.domain.model.Project
+import com.scrap2stack.app.domain.repository.ProjectRepository
+import com.scrap2stack.app.domain.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,14 +16,16 @@ import kotlinx.coroutines.launch
 sealed class HomeUiState {
     object Loading : HomeUiState()
     data class Success(
-        val recommendedProjects: List<ProjectRecommendationDto>,
-        val trendingProjects: List<ProjectDto>
+        val user: Developer?,
+        val recommendedProjects: List<Project>,
+        val trendingProjects: List<Project>
     ) : HomeUiState()
     data class Error(val message: String) : HomeUiState()
 }
 
 class HomeViewModel(
-    private val repository: ProjectRepository = ProjectRepository(RetrofitClient.apiService)
+    private val projectRepository: ProjectRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -35,19 +39,24 @@ class HomeViewModel(
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val recommendedResp = repository.getRecommendedProjects()
-                val trendingResp = repository.getProjects(page = 1)
+                val userResult = userRepository.getMyProfile()
+                val recommendedResult = projectRepository.getFeaturedProjects()
+                val trendingResult = projectRepository.getRecentProjects()
                 
-                if (recommendedResp.isSuccessful && trendingResp.isSuccessful) {
+                if (recommendedResult.isSuccess && trendingResult.isSuccess) {
                     _uiState.value = HomeUiState.Success(
-                        recommendedProjects = recommendedResp.body()?.data ?: emptyList(),
-                        trendingProjects = trendingResp.body()?.data?.projects ?: emptyList()
+                        user = userResult.getOrNull(),
+                        recommendedProjects = recommendedResult.getOrDefault(emptyList()),
+                        trendingProjects = trendingResult.getOrDefault(emptyList())
                     )
                 } else {
-                    _uiState.value = HomeUiState.Error("Failed to load home data")
+                    val errorMessage = recommendedResult.exceptionOrNull()?.message 
+                        ?: trendingResult.exceptionOrNull()?.message 
+                        ?: "Failed to load home data"
+                    _uiState.value = HomeUiState.Error(errorMessage)
                 }
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error("Network error: ${e.localizedMessage}")
+                _uiState.value = HomeUiState.Error("Unexpected error: ${e.localizedMessage}")
             }
         }
     }

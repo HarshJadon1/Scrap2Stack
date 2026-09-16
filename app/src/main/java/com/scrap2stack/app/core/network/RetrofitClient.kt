@@ -20,15 +20,13 @@ object RetrofitClient {
     }
 
     private fun buildRetrofit(context: Context): ApiService {
-        val sessionManager = SessionManager.getInstance(context)
-        
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
 
         val okHttpClient = OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .addInterceptor(AuthInterceptor(sessionManager))
+            .addInterceptor(AuthInterceptor())
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)

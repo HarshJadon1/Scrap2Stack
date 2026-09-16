@@ -6,11 +6,22 @@ data class Developer(
     val username: String,
     val bio: String,
     val profileImageUrl: String? = null,
-    val skills: List<String>,
-    val interests: List<String>,
-    val experienceLevel: String,
-    val githubUsername: String,
-    val charms: Int,
+    val skills: List<String> = emptyList(),
+    val interests: List<String> = emptyList(),
+    val experienceLevel: ExperienceLevel = ExperienceLevel.BEGINNER,
+    val githubUrl: String = "",
+    val githubUsername: String = "",
+    val linkedinUrl: String = "",
+    val portfolioUrl: String = "",
+    val charms: Int = 0,
     val matchScore: Int? = null,
-    val matchReason: String? = null
+    val matchReason: String? = null,
+    val createdAt: String = "",
+    val updatedAt: String = ""
 )
+
+enum class ExperienceLevel {
+    BEGINNER,
+    INTERMEDIATE,
+    ADVANCED
+}

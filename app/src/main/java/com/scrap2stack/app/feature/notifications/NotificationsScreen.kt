@@ -1,25 +1,44 @@
 package com.scrap2stack.app.feature.notifications
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.scrap2stack.app.core.ui.components.SectionHeader
-import com.scrap2stack.app.data.local.MockData
+import com.scrap2stack.app.core.ui.components.*
+import com.scrap2stack.app.data.remote.dto.NotificationDto
+import com.scrap2stack.app.domain.model.CollaborationRequest
+import com.scrap2stack.app.feature.matching.CollaborationViewModel
+import com.scrap2stack.app.feature.matching.ReceivedRequestCard
+import com.scrap2stack.app.feature.matching.RequestsUiState
+import com.scrap2stack.app.feature.matching.SentRequestCard
 
 @Composable
 fun NotificationsScreen(
+    notificationsViewModel: NotificationsViewModel,
+    collaborationViewModel: CollaborationViewModel,
     onNavigateToRequests: () -> Unit
 ) {
+    val notificationsUiState by notificationsViewModel.uiState.collectAsState()
+    val requestsState by collaborationViewModel.requestsState.collectAsState()
+
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Requests", "Activity")
+
+    LaunchedEffect(Unit) {
+        notificationsViewModel.loadNotifications()
+        collaborationViewModel.loadRequests()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -30,58 +49,167 @@ fun NotificationsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SectionHeader(title = "Notifications")
-            TextButton(onClick = onNavigateToRequests) {
-                Icon(Icons.Default.Group, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Requests")
+            SectionHeader(title = "Alerts & Activity")
+
+            if (selectedTab == 1 && notificationsUiState is NotificationsUiState.Success &&
+                (notificationsUiState as NotificationsUiState.Success).notifications.any { !it.read }
+            ) {
+                IconButton(onClick = { notificationsViewModel.markAllAsRead() }) {
+                    Icon(Icons.Default.DoneAll, contentDescription = "Mark all as read")
+                }
             }
         }
-        
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()
+
+        TabRow(
+            selectedTabIndex = selectedTab,
+            containerColor = Color.Transparent,
+            divider = {}
         ) {
-            items(MockData.notifications) { notification ->
-                NotificationItem(notification)
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(title)
+                            if (index == 0 && requestsState is RequestsUiState.Success) {
+                                val pendingCount = (requestsState as RequestsUiState.Success).received.count { it.status.name == "PENDING" }
+                                if (pendingCount > 0) {
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Badge {
+                                        Text(pendingCount.toString())
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (selectedTab == 0) {
+                // Requests Tab
+                when (val state = requestsState) {
+                    is RequestsUiState.Loading -> LoadingView()
+                    is RequestsUiState.Error -> ErrorView(message = state.message, onRetry = { collaborationViewModel.loadRequests() })
+                    is RequestsUiState.Success -> {
+                        val allRequests = state.received + state.sent
+
+                        if (allRequests.isEmpty()) {
+                            EmptyStateView(
+                                title = "No collaboration requests",
+                                description = "When other developers invite you to projects or request to join yours, they will appear here.",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = PaddingValues(bottom = 24.dp)
+                            ) {
+                                if (state.received.isNotEmpty()) {
+                                    item {
+                                        Text("RECEIVED REQUESTS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                    items(state.received) { request ->
+                                        ReceivedRequestCard(
+                                            request = request,
+                                            onAccept = { collaborationViewModel.acceptRequest(request.id) },
+                                            onReject = { collaborationViewModel.rejectRequest(request.id) }
+                                        )
+                                    }
+                                }
+
+                                if (state.sent.isNotEmpty()) {
+                                    item {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text("SENT REQUESTS", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                    }
+                                    items(state.sent) { request ->
+                                        SentRequestCard(
+                                            request = request,
+                                            onCancel = { collaborationViewModel.cancelRequest(request.id) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Notifications / Activity Tab
+                when (val state = notificationsUiState) {
+                    is NotificationsUiState.Loading -> LoadingView()
+                    is NotificationsUiState.Error -> ErrorView(message = state.message, onRetry = { notificationsViewModel.loadNotifications() })
+                    is NotificationsUiState.Success -> {
+                        if (state.notifications.isEmpty()) {
+                            EmptyStateView(
+                                title = "No system activity yet",
+                                description = "Updates regarding your tasks, charms, and roadmap milestones will appear here.",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 24.dp)
+                            ) {
+                                items(state.notifications) { notification ->
+                                    NotificationCard(
+                                        notification = notification,
+                                        onClick = {
+                                            if (!notification.read) {
+                                                notificationsViewModel.markAsRead(notification.id)
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun NotificationItem(notification: MockData.Notification) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = if (notification.isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f),
-        border = if (!notification.isRead) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)) else null
+fun NotificationCard(
+    notification: NotificationDto,
+    onClick: () -> Unit
+) {
+    Scrap2StackCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (!notification.isRead) {
-                Icon(
-                    imageVector = Icons.Default.Circle,
-                    contentDescription = null,
-                    modifier = Modifier.size(8.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-            }
-            
+            Icon(
+                imageVector = Icons.Default.Notifications,
+                contentDescription = null,
+                tint = if (!notification.read) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = notification.message,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (notification.isRead) FontWeight.Normal else FontWeight.Bold
+                    text = notification.title,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = if (!notification.read) FontWeight.Bold else FontWeight.Normal
+                    )
                 )
-                Text(
-                    text = notification.time,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
+                if (notification.content.isNotEmpty()) {
+                    Text(
+                        text = notification.content,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }

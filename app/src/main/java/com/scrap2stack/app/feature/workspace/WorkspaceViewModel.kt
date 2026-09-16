@@ -2,9 +2,11 @@ package com.scrap2stack.app.feature.workspace
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scrap2stack.app.core.network.RetrofitClient
-import com.scrap2stack.app.data.remote.dto.*
-import com.scrap2stack.app.data.repository.ProjectRepository
+import com.scrap2stack.app.data.remote.dto.ProjectMemberDto
+import com.scrap2stack.app.data.remote.dto.RoadmapItemDto
+import com.scrap2stack.app.data.remote.dto.TaskDto
+import com.scrap2stack.app.data.repository.WorkspaceRepositoryImpl
+import com.scrap2stack.app.domain.repository.WorkspaceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,16 +15,15 @@ import kotlinx.coroutines.launch
 sealed class WorkspaceState {
     object Loading : WorkspaceState()
     data class Success(
-        val workspace: WorkspaceDto,
         val tasks: List<TaskDto>,
-        val roadmap: RoadmapResponse?,
-        val contributions: List<GitHubContributionDto>
+        val roadmapItems: List<RoadmapItemDto>,
+        val members: List<ProjectMemberDto>
     ) : WorkspaceState()
     data class Error(val message: String) : WorkspaceState()
 }
 
 class WorkspaceViewModel(
-    private val repository: ProjectRepository = ProjectRepository(RetrofitClient.apiService)
+    private val repository: WorkspaceRepository = WorkspaceRepositoryImpl()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<WorkspaceState>(WorkspaceState.Loading)
@@ -32,46 +33,36 @@ class WorkspaceViewModel(
         viewModelScope.launch {
             _uiState.value = WorkspaceState.Loading
             try {
-                val wsResponse = repository.getWorkspace(projectId)
-                val tasksResponse = repository.getProjectTasks(projectId)
-                val roadmapResponse = repository.getRoadmap(projectId)
-                // For contributions, we usually fetch user's contributions or project specific ones
-                // Here we fetch my contributions for the timeline
-                val contribResponse = repository.getMyContributions()
+                val tasksResult = repository.getTasks(projectId)
+                val roadmapResult = repository.getRoadmapItems(projectId)
+                val membersResult = repository.getProjectMembers(projectId)
 
-                if (wsResponse.isSuccessful && wsResponse.body()?.success == true) {
-                    _uiState.value = WorkspaceState.Success(
-                        workspace = wsResponse.body()!!.data!!,
-                        tasks = tasksResponse.body()?.data ?: emptyList(),
-                        roadmap = roadmapResponse.body()?.data,
-                        contributions = contribResponse.body()?.data ?: emptyList()
-                    )
-                } else {
-                    _uiState.value = WorkspaceState.Error(wsResponse.body()?.message ?: "Failed to load workspace")
-                }
+                _uiState.value = WorkspaceState.Success(
+                    tasks = tasksResult.getOrDefault(emptyList()),
+                    roadmapItems = roadmapResult.getOrDefault(emptyList()),
+                    members = membersResult.getOrDefault(emptyList())
+                )
             } catch (e: Exception) {
-                _uiState.value = WorkspaceState.Error("Network error: ${e.localizedMessage}")
+                _uiState.value = WorkspaceState.Error("Failed to load workspace: ${e.localizedMessage}")
             }
         }
     }
 
     fun updateTaskStatus(taskId: String, status: String, projectId: String) {
         viewModelScope.launch {
-            try {
-                val response = repository.updateTaskStatus(taskId, status)
-                if (response.isSuccessful) {
+            repository.updateTaskStatus(taskId, status)
+                .onSuccess {
                     loadWorkspaceData(projectId)
                 }
-            } catch (e: Exception) { }
         }
     }
 
-    fun syncGitHub(projectId: String) {
+    fun updateRoadmapStatus(itemId: String, status: String, projectId: String) {
         viewModelScope.launch {
-            try {
-                repository.syncGitHub(projectId)
-                loadWorkspaceData(projectId)
-            } catch (e: Exception) { }
+            repository.updateRoadmapItemStatus(itemId, status)
+                .onSuccess {
+                    loadWorkspaceData(projectId)
+                }
         }
     }
 }

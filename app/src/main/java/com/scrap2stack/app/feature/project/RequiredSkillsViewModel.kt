@@ -2,9 +2,9 @@ package com.scrap2stack.app.feature.project
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scrap2stack.app.core.network.RetrofitClient
-import com.scrap2stack.app.data.remote.dto.AnalysisDto
-import com.scrap2stack.app.data.repository.ProjectRepository
+import com.scrap2stack.app.data.repository.ProjectRepositoryImpl
+import com.scrap2stack.app.domain.model.ProjectAnalysis
+import com.scrap2stack.app.domain.repository.ProjectRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,12 +12,12 @@ import kotlinx.coroutines.launch
 
 sealed class RequiredSkillsState {
     object Loading : RequiredSkillsState()
-    data class Success(val analysis: AnalysisDto) : RequiredSkillsState()
+    data class Success(val analysis: ProjectAnalysis) : RequiredSkillsState()
     data class Error(val message: String) : RequiredSkillsState()
 }
 
 class RequiredSkillsViewModel(
-    private val repository: ProjectRepository = ProjectRepository(RetrofitClient.apiService)
+    private val repository: ProjectRepository = ProjectRepositoryImpl()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<RequiredSkillsState>(RequiredSkillsState.Loading)
@@ -26,16 +26,17 @@ class RequiredSkillsViewModel(
     fun loadSkills(projectId: String) {
         viewModelScope.launch {
             _uiState.value = RequiredSkillsState.Loading
-            try {
-                val response = repository.getProjectAnalysis(projectId)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    _uiState.value = RequiredSkillsState.Success(response.body()!!.data!!)
-                } else {
-                    _uiState.value = RequiredSkillsState.Error(response.body()?.message ?: "Failed to load skills")
+            repository.getProjectAnalysis(projectId)
+                .onSuccess { analysis ->
+                    if (analysis != null) {
+                        _uiState.value = RequiredSkillsState.Success(analysis)
+                    } else {
+                        _uiState.value = RequiredSkillsState.Error("No skills analysis found for this project.")
+                    }
                 }
-            } catch (e: Exception) {
-                _uiState.value = RequiredSkillsState.Error("Network error: ${e.localizedMessage}")
-            }
+                .onFailure { error ->
+                    _uiState.value = RequiredSkillsState.Error(error.message ?: "Failed to load required skills")
+                }
         }
     }
 }

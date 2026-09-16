@@ -1,37 +1,44 @@
 package com.scrap2stack.app.feature.project
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.data.remote.dto.ProjectDto
-import com.scrap2stack.app.data.remote.dto.AnalysisDto
+import com.scrap2stack.app.domain.model.ProjectAnalysis
+import com.scrap2stack.app.ui.theme.StatusAbandoned
+import com.scrap2stack.app.ui.theme.StatusCompleted
+import com.scrap2stack.app.ui.theme.StatusReviving
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectDetailsScreen(
     projectId: String,
+    viewModel: ProjectDetailsViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToScrapAI: () -> Unit,
     onNavigateToMatches: () -> Unit,
-    onNavigateToWorkspace: () -> Unit,
-    viewModel: ProjectDetailsViewModel = viewModel()
+    onNavigateToWorkspace: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val analysisState by viewModel.analysisState.collectAsState()
@@ -41,6 +48,8 @@ fun ProjectDetailsScreen(
         viewModel.loadProjectAnalysis(projectId)
     }
 
+    val isSaved = (uiState as? ProjectDetailsState.Success)?.isSaved ?: false
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -48,6 +57,17 @@ fun ProjectDetailsScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (uiState is ProjectDetailsState.Success) {
+                        IconButton(onClick = { viewModel.toggleSave(projectId) }) {
+                            Icon(
+                                imageVector = if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                contentDescription = if (isSaved) "Unsave Project" else "Save Project",
+                                tint = if (isSaved) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                            )
+                        }
                     }
                 }
             )
@@ -74,15 +94,20 @@ fun ProjectDetailsScreen(
                     onNavigateToWorkspace = onNavigateToWorkspace
                 )
             }
+            is ProjectDetailsState.Deleted -> {
+                LaunchedEffect(Unit) {
+                    onNavigateBack()
+                }
+            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProjectDetailsContent(
     project: ProjectDto,
-    analysis: AnalysisDto?,
+    analysis: ProjectAnalysis?,
     innerPadding: PaddingValues,
     onNavigateToScrapAI: () -> Unit,
     onNavigateToMatches: () -> Unit,
@@ -108,33 +133,34 @@ private fun ProjectDetailsContent(
             )
             
             val statusColor = when (project.status) {
-                "ABANDONED" -> com.scrap2stack.app.ui.theme.StatusAbandoned
-                "REVIVING" -> com.scrap2stack.app.ui.theme.StatusReviving
-                "COMPLETED" -> com.scrap2stack.app.ui.theme.StatusCompleted
+                "ABANDONED" -> StatusAbandoned
+                "REVIVING" -> StatusReviving
+                "COMPLETED" -> StatusCompleted
                 else -> Color.Gray
             }
             StatusChip(status = project.status, color = statusColor)
         }
 
-        Text(
-            text = project.technologies.joinToString(" • "),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
+        if (project.technologies.isNotEmpty()) {
+            Text(
+                text = project.technologies.joinToString(" • "),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Scores
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             ScoreCard(label = "Revival Potential", score = "${project.revivalScore}%", modifier = Modifier.weight(1f))
-            ScoreCard(label = "Quality Score", score = "${project.qualityScore}/100", modifier = Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // PHASE 7: AI Insights Section
-        if (analysis != null && analysis.nextSteps.isNotEmpty()) {
+        // AI Insights Section
+        if (analysis != null && analysis.recommendations.isNotEmpty()) {
             AIInsightsSection(analysis)
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -146,6 +172,17 @@ private fun ProjectDetailsContent(
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(vertical = 8.dp)
         )
+
+        if (!project.problem.isNull_or_blank_safe()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Why was it abandoned?", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text(
+                text = project.problem ?: "",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -172,45 +209,57 @@ private fun ProjectDetailsContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         // Required Skills
-        Text("Required Skills", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-        FlowRow(
-            modifier = Modifier.padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            project.requiredSkills.forEach { skill ->
-                SkillChip(skill = skill)
+        if (project.requiredSkills.isNotEmpty()) {
+            Text("Required Skills", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            Row(
+                modifier = Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                project.requiredSkills.forEach { skill ->
+                    SkillChip(skill = skill)
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
         // Actions
-        Scrap2StackButton(
-            text = "Request to Collaborate",
-            onClick = { /* TODO */ }
-        )
         Scrap2StackOutlinedButton(
             text = "View Developer Matches",
             onClick = onNavigateToMatches
         )
         
-        if (project.progress > 0) {
-            TextButton(
-                onClick = onNavigateToWorkspace,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Terminal, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Open Project Workspace")
-            }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextButton(
+            onClick = onNavigateToWorkspace,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Terminal, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Open Project Workspace")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
         
-        project.githubUrl?.let { url ->
+        if (!project.githubUrl.isNullOrBlank()) {
+            val uriHandler = LocalUriHandler.current
             TextButton(
-                onClick = { /* TODO: Open URL */ },
+                onClick = {
+                    val url = project.githubUrl
+                    if (url.isNotBlank()) {
+                        val formattedUrl = if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                            "https://$url"
+                        } else {
+                            url
+                        }
+                        try {
+                            uriHandler.openUri(formattedUrl)
+                        } catch (e: Exception) {
+                            // Ignore error
+                        }
+                    }
+                },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Icon(Icons.Default.Code, contentDescription = null)
@@ -223,8 +272,12 @@ private fun ProjectDetailsContent(
     }
 }
 
+private fun String?.isNull_or_blank_safe(): Boolean {
+    return this == null || this.trim().isEmpty()
+}
+
 @Composable
-fun AIInsightsSection(analysis: AnalysisDto) {
+fun AIInsightsSection(analysis: ProjectAnalysis) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -249,7 +302,7 @@ fun AIInsightsSection(analysis: AnalysisDto) {
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
-        analysis.nextSteps.take(3).forEach { step ->
+        analysis.recommendations.take(3).forEach { step ->
             Row(modifier = Modifier.padding(vertical = 4.dp)) {
                 Icon(
                     Icons.Default.Info, 

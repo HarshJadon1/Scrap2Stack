@@ -26,9 +26,8 @@ fun GitHubImportScreen(
 
     LaunchedEffect(uiState) {
         if (uiState is GitHubImportState.Success) {
-            val projectId = (uiState as GitHubImportState.Success).data.project.id
+            val projectId = (uiState as GitHubImportState.Success).project.id
             onNavigateToAnalysis(projectId)
-            viewModel.resetState()
         }
     }
 
@@ -79,7 +78,12 @@ fun GitHubImportScreen(
 
             OutlinedTextField(
                 value = repoUrl,
-                onValueChange = { repoUrl = it },
+                onValueChange = {
+                    repoUrl = it
+                    if (uiState is GitHubImportState.Error) {
+                        viewModel.resetState()
+                    }
+                },
                 label = { Text("Repository URL") },
                 placeholder = { Text("https://github.com/user/project") },
                 modifier = Modifier.fillMaxWidth(),
@@ -110,7 +114,7 @@ fun GitHubImportScreen(
                     Scrap2StackButton(
                         text = "Analyze Repository",
                         onClick = { viewModel.importRepository(repoUrl) },
-                        enabled = repoUrl.startsWith("https://github.com/")
+                        enabled = repoUrl.isNotBlank() && repoUrl.contains("github.com")
                     )
                 }
             }

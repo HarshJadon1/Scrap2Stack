@@ -13,33 +13,45 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Primary,
-    onPrimary = OnPrimary,
-    primaryContainer = PrimaryContainer,
-    onPrimaryContainer = OnPrimaryContainer,
-    secondary = Secondary,
-    onSecondary = OnSecondary,
-    secondaryContainer = SecondaryContainer,
-    onSecondaryContainer = OnSecondaryContainer,
-    background = Background,
-    onBackground = OnBackground,
-    surface = Surface,
-    onSurface = OnSurface
+    primary = PrimaryBlue,
+    onPrimary = Color.White,
+    primaryContainer = PrimaryBlueDark,
+    onPrimaryContainer = Color.White,
+    secondary = RevivalEmerald,
+    onSecondary = Color.White,
+    secondaryContainer = RevivalEmeraldDark,
+    onSecondaryContainer = Color.White,
+    background = SlateBackgroundDark,
+    onBackground = SlateOnSurfaceDark,
+    surface = SlateSurfaceDark,
+    onSurface = SlateOnSurfaceDark,
+    surfaceVariant = SlateSurfaceVariantDark,
+    onSurfaceVariant = Color(0xFF94A3B8),
+    outline = Color(0xFF475569),
+    outlineVariant = Color(0xFF334155),
+    error = StatusAbandoned,
+    onError = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Primary,
-    onPrimary = OnPrimary,
-    primaryContainer = TechBlueLight,
-    onPrimaryContainer = OnPrimary,
-    secondary = Secondary,
-    onSecondary = OnSecondary,
-    secondaryContainer = RevivalGreenLight,
-    onSecondaryContainer = OnSecondary,
-    background = ScrapWhite,
-    onBackground = ScrapBlack,
-    surface = Color.White,
-    onSurface = ScrapBlack
+    primary = PrimaryBlueDark,
+    onPrimary = Color.White,
+    primaryContainer = PrimaryBlueLight.copy(alpha = 0.2f),
+    onPrimaryContainer = PrimaryBlueDark,
+    secondary = RevivalEmeraldDark,
+    onSecondary = Color.White,
+    secondaryContainer = RevivalEmeraldLight.copy(alpha = 0.2f),
+    onSecondaryContainer = RevivalEmeraldDark,
+    background = SlateBackgroundLight,
+    onBackground = SlateOnSurfaceLight,
+    surface = SlateSurfaceLight,
+    onSurface = SlateOnSurfaceLight,
+    surfaceVariant = SlateSurfaceVariantLight,
+    onSurfaceVariant = Color(0xFF64748B),
+    outline = Color(0xFFCBD5E1),
+    outlineVariant = Color(0xFFE2E8F0),
+    error = StatusAbandoned,
+    onError = Color.White
 )
 
 @Composable

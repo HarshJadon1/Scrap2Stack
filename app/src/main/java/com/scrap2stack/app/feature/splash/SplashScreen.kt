@@ -12,27 +12,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.scrap2stack.app.core.network.SessionManager
+import com.scrap2stack.app.feature.auth.AuthViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
 @Composable
 fun SplashScreen(
-    sessionManager: SessionManager,
+    authViewModel: AuthViewModel,
     onNavigateToOnboarding: () -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateToMain: () -> Unit
 ) {
     LaunchedEffect(key1 = true) {
-        val isOnboardingCompleted = sessionManager.isOnboardingCompleted.first()
-        val isLoggedIn = !sessionManager.authToken.first().isNullOrBlank()
+        val isOnboardingCompleted = authViewModel.isOnboardingCompleted().first()
+        val isLoggedIn = authViewModel.isUserLoggedIn()
         
         delay(2000) // Branding delay
         
         when {
+            isLoggedIn -> onNavigateToMain()
             !isOnboardingCompleted -> onNavigateToOnboarding()
-            !isLoggedIn -> onNavigateToLogin()
-            else -> onNavigateToMain()
+            else -> onNavigateToLogin()
         }
     }
 

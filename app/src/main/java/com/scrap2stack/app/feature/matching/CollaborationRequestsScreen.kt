@@ -9,20 +9,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.*
-import com.scrap2stack.app.data.remote.dto.CollaborationRequestDto
+import com.scrap2stack.app.domain.model.CollaborationRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollaborationRequestsScreen(
-    onNavigateBack: () -> Unit,
-    viewModel: CollaborationRequestsViewModel = viewModel()
+    viewModel: CollaborationViewModel,
+    onNavigateBack: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val requestsState by viewModel.requestsState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Received", "Sent")
 
@@ -53,25 +51,22 @@ fun CollaborationRequestsScreen(
                 }
             }
 
-            when (val state = uiState) {
-                is CollaborationRequestsState.Loading -> {
+            when (val state = requestsState) {
+                is RequestsUiState.Loading -> {
                     LoadingView()
                 }
-                is CollaborationRequestsState.Empty -> {
-                    EmptyStateView(
-                        title = "No requests found",
-                        description = "When you receive project invites or send them, they will appear here.",
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                is CollaborationRequestsState.Error -> {
+                is RequestsUiState.Error -> {
                     ErrorView(message = state.message, onRetry = { viewModel.loadRequests() })
                 }
-                is CollaborationRequestsState.Success -> {
-                    val requests = if (selectedTab == 0) state.requests else emptyList() // Simplified for now
-                    
-                    if (requests.isEmpty() && selectedTab == 0) {
-                        EmptyStateView(title = "No received requests", description = "You haven't received any invitations yet.", modifier = Modifier.fillMaxSize())
+                is RequestsUiState.Success -> {
+                    val requests = if (selectedTab == 0) state.received else state.sent
+
+                    if (requests.isEmpty()) {
+                        EmptyStateView(
+                            title = if (selectedTab == 0) "No received requests" else "No sent requests",
+                            description = if (selectedTab == 0) "You haven't received any invitations yet." else "You haven't sent any invitations yet.",
+                            modifier = Modifier.fillMaxSize()
+                        )
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
@@ -79,16 +74,22 @@ fun CollaborationRequestsScreen(
                             contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)
                         ) {
                             items(requests) { request ->
-                                ReceivedRequestCard(
-                                    request = request,
-                                    onAccept = { viewModel.acceptRequest(request.id) },
-                                    onReject = { viewModel.rejectRequest(request.id) }
-                                )
+                                if (selectedTab == 0) {
+                                    ReceivedRequestCard(
+                                        request = request,
+                                        onAccept = { viewModel.acceptRequest(request.id) },
+                                        onReject = { viewModel.rejectRequest(request.id) }
+                                    )
+                                } else {
+                                    SentRequestCard(
+                                        request = request,
+                                        onCancel = { viewModel.cancelRequest(request.id) }
+                                    )
+                                }
                             }
                         }
                     }
                 }
-                else -> {}
             }
         }
     }
@@ -96,7 +97,7 @@ fun CollaborationRequestsScreen(
 
 @Composable
 fun ReceivedRequestCard(
-    request: CollaborationRequestDto,
+    request: CollaborationRequest,
     onAccept: () -> Unit,
     onReject: () -> Unit
 ) {
@@ -139,6 +140,48 @@ fun ReceivedRequestCard(
                 Button(onClick = onAccept, modifier = Modifier.weight(1f)) {
                     Text("Accept")
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun SentRequestCard(
+    request: CollaborationRequest,
+    onCancel: () -> Unit
+) {
+    Scrap2StackCard {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Sent Request", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text(text = "Project ID: ${request.projectId}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                }
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = request.status.name,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+
+            if (request.message.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = request.message, style = MaterialTheme.typography.bodyMedium)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Cancel Request")
             }
         }
     }

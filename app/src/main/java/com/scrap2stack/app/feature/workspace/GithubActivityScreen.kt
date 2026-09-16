@@ -21,7 +21,7 @@ import com.scrap2stack.app.data.remote.dto.GitHubContributionDto
 fun GithubActivityScreen(
     projectId: String,
     contributions: List<GitHubContributionDto> = emptyList(),
-    onSync: () -> Unit
+    onSync: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier

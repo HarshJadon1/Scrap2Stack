@@ -13,7 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.*
-import com.scrap2stack.app.data.remote.dto.AnalysisDto
+import com.scrap2stack.app.domain.model.ProjectAnalysis
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +65,7 @@ fun RequiredSkillsScreen(
 
 @Composable
 private fun SkillsContent(
-    analysis: AnalysisDto,
+    analysis: ProjectAnalysis,
     innerPadding: PaddingValues,
     onNavigateToMatches: () -> Unit
 ) {
@@ -85,14 +85,12 @@ private fun SkillsContent(
         
         Spacer(modifier = Modifier.height(24.dp))
 
-        // PHASE 7: Updated to match new AnalysisDto structure
         analysis.requiredSkills.forEach { skillReq ->
             SkillRequirementCard(
-                skill = skillReq.name,
-                level = "INTERMEDIATE", // Level is not explicitly in DTO but can be inferred or default
-                importance = skillReq.importance,
-                coverage = if (analysis.missingSkills.contains(skillReq.name)) "Missing" else "Covered",
-                why = skillReq.why
+                skill = skillReq.skill,
+                level = "INTERMEDIATE",
+                importance = skillReq.importance.name,
+                coverage = "Required"
             )
         }
 
@@ -105,15 +103,8 @@ private fun SkillsContent(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        val missingCount = analysis.missingSkills.size
-        val summaryText = if (missingCount > 0) {
-            "You need to find developers with expertise in ${analysis.missingSkills.joinToString(", ")} to complete the core team."
-        } else {
-            "The current team has good coverage of the required skills."
-        }
-        
         Text(
-            text = summaryText,
+            text = "Connect with developers on the platform who possess these required skills.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
         )
@@ -155,13 +146,13 @@ fun SkillRequirementCard(
                 
                 Surface(
                     shape = MaterialTheme.shapes.small,
-                    color = if (coverage == "Covered") MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer
+                    color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Text(
                         text = coverage,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = if (coverage == "Covered") MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onErrorContainer
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
             }

@@ -2,11 +2,8 @@ package com.scrap2stack.app.feature.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scrap2stack.app.data.remote.dto.*
 import com.scrap2stack.app.data.repository.AuthRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 sealed class AuthState {
@@ -29,16 +26,13 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
         viewModelScope.launch {
             _authState.value = AuthState.Loading
-            try {
-                val response = repository.login(LoginRequest(email, password))
-                if (response.isSuccessful && response.body()?.success == true) {
+            repository.login(email, password)
+                .onSuccess {
                     _authState.value = AuthState.Success("Login successful")
-                } else {
-                    _authState.value = AuthState.Error(response.body()?.message ?: "Login failed")
                 }
-            } catch (e: Exception) {
-                _authState.value = AuthState.Error("Network error: ${e.localizedMessage}")
-            }
+                .onFailure { e ->
+                    _authState.value = AuthState.Error(e.message ?: "Login failed")
+                }
         }
     }
 
@@ -50,24 +44,52 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
         viewModelScope.launch {
             _authState.value = AuthState.Loading
-            try {
-                val response = repository.register(RegisterRequest(name, username, email, password))
-                if (response.isSuccessful && response.body()?.success == true) {
-                    _authState.value = AuthState.Success("Registration successful")
-                } else {
-                    _authState.value = AuthState.Error(response.body()?.message ?: "Registration failed")
+            repository.register(name, username, email, password)
+                .onSuccess {
+                    _authState.value = AuthState.Success("Registration successful. Please check your email for verification.")
                 }
-            } catch (e: Exception) {
-                _authState.value = AuthState.Error("Network error: ${e.localizedMessage}")
-            }
+                .onFailure { e ->
+                    _authState.value = AuthState.Error(e.message ?: "Registration failed")
+                }
+        }
+    }
+
+    fun forgotPassword(email: String) {
+        if (email.isBlank()) {
+            _authState.value = AuthState.Error("Email is required")
+            return
+        }
+
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            repository.forgotPassword(email)
+                .onSuccess {
+                    _authState.value = AuthState.Success("Password reset email sent")
+                }
+                .onFailure { e ->
+                    _authState.value = AuthState.Error(e.message ?: "Failed to send reset email")
+                }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            repository.logout()
+            _authState.value = AuthState.Idle
         }
     }
 
     fun resetState() {
         _authState.value = AuthState.Idle
     }
+
+    suspend fun isUserLoggedIn(): Boolean {
+        return repository.isUserLoggedIn()
+    }
     
     suspend fun setOnboardingCompleted(completed: Boolean) {
         repository.setOnboardingCompleted(completed)
     }
+
+    fun isOnboardingCompleted(): Flow<Boolean> = repository.isOnboardingCompleted()
 }

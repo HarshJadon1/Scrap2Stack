@@ -9,24 +9,45 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.Scrap2StackButton
+import com.scrap2stack.app.domain.model.ProjectStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateProjectScreen(
+    viewModel: CreateProjectViewModel,
     onNavigateBack: () -> Unit,
-    onProjectCreated: () -> Unit
+    onProjectCreated: (String) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var problem by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("Web") }
     var technologies by remember { mutableStateOf("") }
     var skills by remember { mutableStateOf("") }
+    var status by remember { mutableStateOf(ProjectStatus.ABANDONED) }
     var githubUrl by remember { mutableStateOf("") }
 
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is CreateProjectUiState.Success -> {
+                if (state.project.id.isNotBlank()) {
+                    onProjectCreated(state.project.id)
+                }
+            }
+            is CreateProjectUiState.Error -> {
+                snackbarHostState.showSnackbar(state.message)
+            }
+            else -> {}
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Create Project") },
@@ -56,7 +77,7 @@ fun CreateProjectScreen(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Project Name") },
+                label = { Text("Project Name *") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -66,7 +87,7 @@ fun CreateProjectScreen(
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Short Description") },
+                label = { Text("Short Description *") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2
             )
@@ -76,7 +97,7 @@ fun CreateProjectScreen(
             OutlinedTextField(
                 value = problem,
                 onValueChange = { problem = it },
-                label = { Text("The Problem (Why it was abandoned?)") },
+                label = { Text("The Problem (Why it was abandoned?) *") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
@@ -86,7 +107,7 @@ fun CreateProjectScreen(
             OutlinedTextField(
                 value = technologies,
                 onValueChange = { technologies = it },
-                label = { Text("Technologies (Comma separated)") },
+                label = { Text("Technologies (Comma separated) *") },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("e.g. Kotlin, Python, React") }
             )
@@ -96,10 +117,28 @@ fun CreateProjectScreen(
             OutlinedTextField(
                 value = skills,
                 onValueChange = { skills = it },
-                label = { Text("Required Skills") },
+                label = { Text("Required Skills (Comma separated) *") },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("e.g. Machine Learning, UI Design") }
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Category", style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.Start))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("Web", "Mobile", "AI/ML", "DevOps").forEach { cat ->
+                    FilterChip(
+                        selected = category == cat,
+                        onClick = { category = cat },
+                        label = { Text(cat) }
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -113,11 +152,29 @@ fun CreateProjectScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Scrap2StackButton(
-                text = "Create Project",
-                onClick = onProjectCreated,
-                enabled = name.isNotBlank() && description.isNotBlank()
-            )
+            if (uiState is CreateProjectUiState.Loading) {
+                CircularProgressIndicator()
+            } else {
+                Scrap2StackButton(
+                    text = "Create Project",
+                    onClick = {
+                        val techList = technologies.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                        val skillList = skills.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                        viewModel.createProject(
+                            name = name,
+                            problem = problem,
+                            description = description,
+                            category = category,
+                            teamSize = 4,
+                            technologies = techList,
+                            status = status,
+                            requiredSkills = skillList,
+                            githubUrl = githubUrl
+                        )
+                    },
+                    enabled = name.isNotBlank() && description.isNotBlank() && problem.isNotBlank() && technologies.isNotBlank() && skills.isNotBlank()
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
         }

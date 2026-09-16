@@ -9,13 +9,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.*
-import com.scrap2stack.app.data.remote.dto.RevivalScoreDto
+import com.scrap2stack.app.domain.model.Project
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,7 +55,7 @@ fun RevivalScoreScreen(
             }
             is RevivalScoreState.Success -> {
                 RevivalScoreContent(
-                    data = state.data,
+                    project = state.project,
                     innerPadding = innerPadding,
                     onNavigateToRequiredSkills = onNavigateToRequiredSkills
                 )
@@ -67,7 +66,7 @@ fun RevivalScoreScreen(
 
 @Composable
 private fun RevivalScoreContent(
-    data: RevivalScoreDto,
+    project: Project,
     innerPadding: PaddingValues,
     onNavigateToRequiredSkills: () -> Unit
 ) {
@@ -82,7 +81,7 @@ private fun RevivalScoreContent(
         Spacer(modifier = Modifier.height(24.dp))
         
         Text(
-            text = "${data.score}/100",
+            text = "${project.revivalScore}/100",
             style = MaterialTheme.typography.displayLarge.copy(
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.primary
@@ -90,7 +89,7 @@ private fun RevivalScoreContent(
         )
         
         Text(
-            text = data.label,
+            text = if (project.revivalScore >= 75) "High Revival Potential" else "Moderate Revival Potential",
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.secondary
         )
@@ -98,7 +97,7 @@ private fun RevivalScoreContent(
         Spacer(modifier = Modifier.height(32.dp))
         
         Text(
-            text = "Why this score?",
+            text = "Project Details",
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             modifier = Modifier.fillMaxWidth()
         )
@@ -106,16 +105,15 @@ private fun RevivalScoreContent(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = data.explanation,
+            text = project.description,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        data.factors.forEach { factor ->
-            ScoreFactorItem(factor.name, factor.score / 100f)
-        }
+        ScoreFactorItem("Quality Score", project.qualityScore / 100f)
+        ScoreFactorItem("Progress", project.progress / 100f)
 
         Spacer(modifier = Modifier.height(48.dp))
 
@@ -143,7 +141,7 @@ fun ScoreFactorItem(label: String, progress: Float) {
             progress = { progress },
             modifier = Modifier.fillMaxWidth(),
             color = if (progress > 0.7f) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
-            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+            strokeCap = StrokeCap.Round
         )
     }
 }

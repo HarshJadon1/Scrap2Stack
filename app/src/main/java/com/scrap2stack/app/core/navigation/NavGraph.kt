@@ -7,9 +7,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.scrap2stack.app.core.network.RetrofitClient
 import com.scrap2stack.app.core.network.SessionManager
 import com.scrap2stack.app.data.repository.AuthRepository
+import com.scrap2stack.app.data.repository.CharmsRepositoryImpl
+import com.scrap2stack.app.data.repository.CollaborationRepositoryImpl
+import com.scrap2stack.app.data.repository.NotificationRepositoryImpl
+import com.scrap2stack.app.data.repository.ProjectRepositoryImpl
+import com.scrap2stack.app.data.repository.TeamRepositoryImpl
+import com.scrap2stack.app.data.repository.UserRepositoryImpl
+import com.scrap2stack.app.domain.repository.CharmsRepository
+import com.scrap2stack.app.domain.repository.NotificationRepository
+import com.scrap2stack.app.domain.repository.ProjectRepository
+import com.scrap2stack.app.domain.repository.UserRepository
+import com.scrap2stack.app.domain.service.MatchingEngine
+import com.scrap2stack.app.domain.usecase.*
 import com.scrap2stack.app.feature.MainScreen
 import com.scrap2stack.app.feature.auth.AuthViewModel
 import com.scrap2stack.app.feature.auth.AuthViewModelFactory
@@ -17,11 +28,22 @@ import com.scrap2stack.app.feature.auth.ForgotPasswordScreen
 import com.scrap2stack.app.feature.auth.LoginScreen
 import com.scrap2stack.app.feature.auth.RegisterScreen
 import com.scrap2stack.app.feature.charms.CharmsScreen
-import com.scrap2stack.app.feature.matching.CollaborationRequestScreen
-import com.scrap2stack.app.feature.matching.CollaborationRequestsScreen
-import com.scrap2stack.app.feature.matching.DeveloperMatchingScreen
+import com.scrap2stack.app.feature.charms.CharmsViewModel
+import com.scrap2stack.app.feature.charms.CharmsViewModelFactory
+import com.scrap2stack.app.feature.discovery.DiscoveryViewModel
+import com.scrap2stack.app.feature.discovery.DiscoveryViewModelFactory
+import com.scrap2stack.app.feature.home.HomeViewModel
+import com.scrap2stack.app.feature.home.HomeViewModelFactory
+import com.scrap2stack.app.feature.matching.*
+import com.scrap2stack.app.feature.notifications.NotificationsViewModel
+import com.scrap2stack.app.feature.notifications.NotificationsViewModelFactory
 import com.scrap2stack.app.feature.onboarding.OnboardingScreen
 import com.scrap2stack.app.feature.profile.DeveloperProfileScreen
+import com.scrap2stack.app.feature.profile.DeveloperProfileViewModel
+import com.scrap2stack.app.feature.profile.DeveloperProfileViewModelFactory
+import com.scrap2stack.app.feature.profile.EditProfileScreen
+import com.scrap2stack.app.feature.profile.ProfileViewModel
+import com.scrap2stack.app.feature.profile.ProfileViewModelFactory
 import com.scrap2stack.app.feature.project.*
 import com.scrap2stack.app.feature.settings.SettingsScreen
 import com.scrap2stack.app.feature.splash.SplashScreen
@@ -30,13 +52,25 @@ import com.scrap2stack.app.feature.workspace.ProjectWorkspaceScreen
 @Composable
 fun NavGraph(navController: NavHostController) {
     val context = LocalContext.current
-    val sessionManager = remember { SessionManager(context) }
-    val apiService = remember { RetrofitClient.getApiService(context) }
-    val authRepository = remember { AuthRepository(apiService, sessionManager) }
+    val sessionManager = remember { SessionManager.getInstance(context) }
+    val authRepository = remember { AuthRepository(sessionManager) }
     
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(authRepository)
     )
+
+    // Repositories
+    val userRepository: UserRepository = remember { UserRepositoryImpl() }
+    val projectRepository: ProjectRepository = remember { ProjectRepositoryImpl() }
+    val collaborationRepository = remember { CollaborationRepositoryImpl() }
+    val teamRepository = remember { TeamRepositoryImpl() }
+    val charmsRepository: CharmsRepository = remember { CharmsRepositoryImpl() }
+    val notificationRepository: NotificationRepository = remember { NotificationRepositoryImpl() }
+
+    val matchingEngine = remember { MatchingEngine() }
+    val getDeveloperMatchesUseCase = remember {
+        GetDeveloperMatchesUseCase(projectRepository, userRepository, matchingEngine)
+    }
 
     val actions = remember(navController) { NavActions(navController) }
 
@@ -46,10 +80,10 @@ fun NavGraph(navController: NavHostController) {
     ) {
         composable(Screen.Splash.route) {
             SplashScreen(
-                sessionManager = sessionManager,
                 onNavigateToOnboarding = actions.navigateToOnboarding,
                 onNavigateToLogin = actions.navigateToLogin,
-                onNavigateToMain = actions.navigateToMain
+                onNavigateToMain = actions.navigateToMain,
+                authViewModel = authViewModel
             )
         }
         
@@ -72,6 +106,7 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Screen.ForgotPassword.route) {
             ForgotPasswordScreen(
+                viewModel = authViewModel,
                 onNavigateBack = actions.navigateBack
             )
         }
@@ -85,20 +120,82 @@ fun NavGraph(navController: NavHostController) {
         }
         
         composable("main") {
+            val getMyProfileUseCase = remember { GetMyProfileUseCase(userRepository) }
+            val updateProfileUseCase = remember { UpdateProfileUseCase(userRepository) }
+            val profileViewModel: ProfileViewModel = viewModel(
+                factory = ProfileViewModelFactory(getMyProfileUseCase, updateProfileUseCase)
+            )
+
+            val homeViewModel: HomeViewModel = viewModel(
+                factory = HomeViewModelFactory(projectRepository, userRepository)
+            )
+            
+            val discoveryViewModel: DiscoveryViewModel = viewModel(
+                factory = DiscoveryViewModelFactory(projectRepository)
+            )
+            
+            val myProjectsViewModel: MyProjectsViewModel = viewModel(
+                factory = MyProjectsViewModelFactory(projectRepository)
+            )
+
+            val collaborationViewModel: CollaborationViewModel = viewModel(
+                factory = CollaborationViewModelFactory(
+                    sendCollaborationRequestUseCase = SendCollaborationRequestUseCase(collaborationRepository),
+                    getReceivedRequestsUseCase = GetReceivedCollaborationRequestsUseCase(collaborationRepository),
+                    getSentRequestsUseCase = GetSentCollaborationRequestsUseCase(collaborationRepository),
+                    acceptRequestUseCase = AcceptCollaborationRequestUseCase(collaborationRepository),
+                    rejectRequestUseCase = RejectCollaborationRequestUseCase(collaborationRepository),
+                    cancelRequestUseCase = CancelCollaborationRequestUseCase(collaborationRepository)
+                )
+            )
+
+            val notificationsViewModel: NotificationsViewModel = viewModel(
+                factory = NotificationsViewModelFactory(notificationRepository)
+            )
+
             MainScreen(
                 rootNavController = navController,
                 onNavigateToProjectDetails = actions.navigateToProjectDetails,
                 onNavigateToCharms = actions.navigateToCharms,
                 onNavigateToSettings = actions.navigateToSettings,
                 onNavigateToCreateProject = actions.navigateToCreateProject,
-                onNavigateToCollaborationRequests = actions.navigateToCollaborationRequests
+                onNavigateToCollaborationRequests = actions.navigateToCollaborationRequests,
+                onNavigateToEditProfile = actions.navigateToEditProfile,
+                profileViewModel = profileViewModel,
+                collaborationViewModel = collaborationViewModel,
+                homeViewModel = homeViewModel,
+                discoveryViewModel = discoveryViewModel,
+                myProjectsViewModel = myProjectsViewModel,
+                notificationsViewModel = notificationsViewModel
             )
         }
         
+        composable(Screen.EditProfile.route) {
+            val getMyProfileUseCase = remember { GetMyProfileUseCase(userRepository) }
+            val updateProfileUseCase = remember { UpdateProfileUseCase(userRepository) }
+            val profileViewModel: ProfileViewModel = viewModel(
+                factory = ProfileViewModelFactory(getMyProfileUseCase, updateProfileUseCase)
+            )
+            EditProfileScreen(
+                viewModel = profileViewModel,
+                onNavigateBack = actions.navigateBack
+            )
+        }
+
         composable(Screen.ProjectDetails.route) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            val getProjectDetailsUseCase = remember { GetProjectDetailsUseCase(projectRepository) }
+            val deleteProjectUseCase = remember { DeleteProjectUseCase(projectRepository) }
+            val projectDetailsViewModel: ProjectDetailsViewModel = viewModel(
+                factory = ProjectDetailsViewModelFactory(
+                    getProjectDetailsUseCase,
+                    deleteProjectUseCase,
+                    projectRepository
+                )
+            )
             ProjectDetailsScreen(
                 projectId = projectId,
+                viewModel = projectDetailsViewModel,
                 onNavigateBack = actions.navigateBack,
                 onNavigateToScrapAI = { actions.navigateToScrapAI(projectId) },
                 onNavigateToMatches = { actions.navigateToDeveloperMatches(projectId) },
@@ -107,9 +204,16 @@ fun NavGraph(navController: NavHostController) {
         }
         
         composable(Screen.CreateProject.route) {
+            val createProjectUseCase = remember { CreateProjectUseCase(projectRepository) }
+            val createProjectViewModel: CreateProjectViewModel = viewModel(
+                factory = CreateProjectViewModelFactory(createProjectUseCase)
+            )
             CreateProjectScreen(
+                viewModel = createProjectViewModel,
                 onNavigateBack = actions.navigateBack,
-                onProjectCreated = actions.navigateToGitHubImport
+                onProjectCreated = { projectId ->
+                    actions.navigateToProjectDetails(projectId)
+                }
             )
         }
         
@@ -149,8 +253,12 @@ fun NavGraph(navController: NavHostController) {
         
         composable(Screen.DeveloperMatches.route) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            val matchingViewModel: DeveloperMatchingViewModel = viewModel(
+                factory = DeveloperMatchingViewModelFactory(getDeveloperMatchesUseCase)
+            )
             DeveloperMatchingScreen(
                 projectId = projectId,
+                viewModel = matchingViewModel,
                 onNavigateBack = actions.navigateBack,
                 onNavigateToDeveloperProfile = actions.navigateToDeveloperProfile,
                 onNavigateToRequestCollaboration = { developerId ->
@@ -161,26 +269,52 @@ fun NavGraph(navController: NavHostController) {
         
         composable(Screen.DeveloperProfile.route) { backStackEntry ->
             val developerId = backStackEntry.arguments?.getString("developerId") ?: ""
+            val devProfileViewModel: DeveloperProfileViewModel = viewModel(
+                factory = DeveloperProfileViewModelFactory(userRepository)
+            )
             DeveloperProfileScreen(
                 developerId = developerId,
+                viewModel = devProfileViewModel,
                 onNavigateBack = actions.navigateBack,
                 onRequestCollaboration = actions.navigateBack
             )
         }
         
         composable(Screen.CollaborationRequest.route) { backStackEntry ->
+            val collaborationViewModel: CollaborationViewModel = viewModel(
+                factory = CollaborationViewModelFactory(
+                    sendCollaborationRequestUseCase = SendCollaborationRequestUseCase(collaborationRepository),
+                    getReceivedRequestsUseCase = GetReceivedCollaborationRequestsUseCase(collaborationRepository),
+                    getSentRequestsUseCase = GetSentCollaborationRequestsUseCase(collaborationRepository),
+                    acceptRequestUseCase = AcceptCollaborationRequestUseCase(collaborationRepository),
+                    rejectRequestUseCase = RejectCollaborationRequestUseCase(collaborationRepository),
+                    cancelRequestUseCase = CancelCollaborationRequestUseCase(collaborationRepository)
+                )
+            )
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
             val developerId = backStackEntry.arguments?.getString("developerId") ?: ""
             CollaborationRequestScreen(
                 projectId = projectId,
                 developerId = developerId,
+                viewModel = collaborationViewModel,
                 onNavigateBack = actions.navigateBack,
                 onRequestSent = actions.popBackStackToMain
             )
         }
 
         composable(Screen.CollaborationRequests.route) {
+            val collaborationViewModel: CollaborationViewModel = viewModel(
+                factory = CollaborationViewModelFactory(
+                    sendCollaborationRequestUseCase = SendCollaborationRequestUseCase(collaborationRepository),
+                    getReceivedRequestsUseCase = GetReceivedCollaborationRequestsUseCase(collaborationRepository),
+                    getSentRequestsUseCase = GetSentCollaborationRequestsUseCase(collaborationRepository),
+                    acceptRequestUseCase = AcceptCollaborationRequestUseCase(collaborationRepository),
+                    rejectRequestUseCase = RejectCollaborationRequestUseCase(collaborationRepository),
+                    cancelRequestUseCase = CancelCollaborationRequestUseCase(collaborationRepository)
+                )
+            )
             CollaborationRequestsScreen(
+                viewModel = collaborationViewModel,
                 onNavigateBack = actions.navigateBack
             )
         }
@@ -195,11 +329,25 @@ fun NavGraph(navController: NavHostController) {
         }
         
         composable(Screen.Charms.route) {
-            CharmsScreen(onNavigateBack = actions.navigateBack)
+            val charmsViewModel: CharmsViewModel = viewModel(
+                factory = CharmsViewModelFactory(charmsRepository)
+            )
+            CharmsScreen(
+                viewModel = charmsViewModel,
+                onNavigateBack = actions.navigateBack
+            )
         }
         
         composable(Screen.Settings.route) {
-            SettingsScreen(onNavigateBack = actions.navigateBack)
+            SettingsScreen(
+                onNavigateBack = actions.navigateBack,
+                onNavigateToProfile = actions.navigateToEditProfile,
+                onNavigateToGitHub = actions.navigateToGitHubImport,
+                onLogout = {
+                    authViewModel.logout()
+                    actions.navigateToLogin()
+                }
+            )
         }
     }
 }
@@ -217,7 +365,7 @@ class NavActions(navController: NavHostController) {
 
     val navigateToLogin: () -> Unit = {
         navController.navigate(Screen.Login.route) {
-            popUpTo(Screen.Onboarding.route) { inclusive = true }
+            popUpTo(0) { inclusive = true }
         }
     }
 
@@ -233,6 +381,10 @@ class NavActions(navController: NavHostController) {
         navController.navigate("main") {
             popUpTo(0) { inclusive = true }
         }
+    }
+
+    val navigateToEditProfile: () -> Unit = {
+        navController.navigate(Screen.EditProfile.route)
     }
 
     val navigateToProjectDetails: (String) -> Unit = { projectId ->

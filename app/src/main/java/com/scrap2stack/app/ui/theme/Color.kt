@@ -2,35 +2,58 @@ package com.scrap2stack.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Scrap2Stack Brand Colors
-val TechBlue = Color(0xFF0D47A1)
-val TechBlueLight = Color(0xFF5472D3)
-val TechBlueDark = Color(0xFF002171)
+// Modern Scrap2Stack Brand Palette (Developer Slate & Neon Accent)
+val PrimaryBlue = Color(0xFF3B82F6)        // Vibrant Electric Blue
+val PrimaryBlueLight = Color(0xFF60A5FA)   // Light Sky Blue
+val PrimaryBlueDark = Color(0xFF1D4ED8)    // Deep Royal Blue
 
-val RevivalGreen = Color(0xFF2E7D32)
-val RevivalGreenLight = Color(0xFF60AD5E)
-val RevivalGreenDark = Color(0xFF005005)
+val RevivalEmerald = Color(0xFF10B981)     // Vibrant Revival Emerald
+val RevivalEmeraldLight = Color(0xFF34D399)// Light Emerald
+val RevivalEmeraldDark = Color(0xFF047857) // Dark Emerald
 
-val ScrapGray = Color(0xFF263238)
-val ScrapBlack = Color(0xFF121212)
-val ScrapWhite = Color(0xFFF5F5F5)
+// Dark Theme Surfaces (Rich Midnight Slate)
+val SlateBackgroundDark = Color(0xFF0F172A) // Slate 900
+val SlateSurfaceDark = Color(0xFF1E293B)    // Slate 800
+val SlateSurfaceVariantDark = Color(0xFF334155) // Slate 700
+val SlateOnSurfaceDark = Color(0xFFF8FAFC)  // Slate 50
 
-val StatusAbandoned = Color(0xFFD32F2F)
-val StatusReviving = Color(0xFFFBC02D)
-val StatusCompleted = Color(0xFF388E3C)
+// Light Theme Surfaces (Clean Studio Slate)
+val SlateBackgroundLight = Color(0xFFF8FAFC) // Slate 50
+val SlateSurfaceLight = Color(0xFFFFFFFF)    // Pure White
+val SlateSurfaceVariantLight = Color(0xFFF1F5F9) // Slate 100
+val SlateOnSurfaceLight = Color(0xFF0F172A)  // Slate 900
 
-// Material 3 mappings
-val Primary = TechBlue
+// Status Colors
+val StatusAbandoned = Color(0xFFEF4444)     // Crimson Red
+val StatusReviving = Color(0xFFF59E0B)      // Amber Orange
+val StatusCompleted = Color(0xFF10B981)     // Emerald Green
+val StatusIdea = Color(0xFF3B82F6)          // Tech Blue
+val StatusPaused = Color(0xFF64748B)        // Muted Slate
+
+// Legacy mappings for backwards compatibility
+val TechBlue = PrimaryBlue
+val TechBlueLight = PrimaryBlueLight
+val TechBlueDark = PrimaryBlueDark
+
+val RevivalGreen = RevivalEmerald
+val RevivalGreenLight = RevivalEmeraldLight
+val RevivalGreenDark = RevivalEmeraldDark
+
+val ScrapGray = SlateSurfaceDark
+val ScrapBlack = SlateBackgroundDark
+val ScrapWhite = SlateOnSurfaceDark
+
+val Primary = PrimaryBlue
 val OnPrimary = Color.White
-val PrimaryContainer = TechBlueDark
+val PrimaryContainer = PrimaryBlueDark
 val OnPrimaryContainer = Color.White
 
-val Secondary = RevivalGreen
+val Secondary = RevivalEmerald
 val OnSecondary = Color.White
-val SecondaryContainer = RevivalGreenDark
+val SecondaryContainer = RevivalEmeraldDark
 val OnSecondaryContainer = Color.White
 
-val Background = ScrapBlack
-val OnBackground = ScrapWhite
-val Surface = ScrapGray
-val OnSurface = ScrapWhite
+val Background = SlateBackgroundDark
+val OnBackground = SlateOnSurfaceDark
+val Surface = SlateSurfaceDark
+val OnSurface = SlateOnSurfaceDark

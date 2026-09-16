@@ -1,6 +1,8 @@
 package com.scrap2stack.app.feature.matching
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -13,18 +15,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.*
-import com.scrap2stack.app.data.remote.dto.MatchResultDto
+import com.scrap2stack.app.domain.model.DeveloperMatch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeveloperMatchingScreen(
     projectId: String,
+    viewModel: DeveloperMatchingViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToDeveloperProfile: (String) -> Unit,
-    onNavigateToRequestCollaboration: (String) -> Unit,
-    viewModel: DeveloperMatchingViewModel = viewModel()
+    onNavigateToRequestCollaboration: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -35,7 +36,7 @@ fun DeveloperMatchingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Best Developer Matches") },
+                title = { Text("Developer Matches") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -45,24 +46,24 @@ fun DeveloperMatchingScreen(
         }
     ) { innerPadding ->
         when (val state = uiState) {
-            is MatchingState.Loading -> {
+            is MatchingUiState.Loading -> {
                 LoadingView(modifier = Modifier.padding(innerPadding))
             }
-            is MatchingState.Empty -> {
+            is MatchingUiState.Empty -> {
                 EmptyStateView(
                     title = "No matches found",
                     description = "Try adding more project skills or wait for more developers to join.",
                     modifier = Modifier.padding(innerPadding)
                 )
             }
-            is MatchingState.Error -> {
+            is MatchingUiState.Error -> {
                 ErrorView(
                     message = state.message,
                     onRetry = { viewModel.loadMatches(projectId) },
                     modifier = Modifier.padding(innerPadding)
                 )
             }
-            is MatchingState.Success -> {
+            is MatchingUiState.Success -> {
                 MatchingList(
                     matches = state.matches,
                     innerPadding = innerPadding,
@@ -77,7 +78,7 @@ fun DeveloperMatchingScreen(
 
 @Composable
 private fun MatchingList(
-    matches: List<MatchResultDto>,
+    matches: List<DeveloperMatch>,
     innerPadding: PaddingValues,
     onNavigateToDeveloperProfile: (String) -> Unit,
     onNavigateToRequestCollaboration: (String) -> Unit
@@ -92,7 +93,7 @@ private fun MatchingList(
         item {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "People whose skills fit this project.",
+                text = "Scrap2Stack Matching Engine identified these developers as your best revival partners.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )
@@ -115,7 +116,7 @@ private fun MatchingList(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DeveloperMatchCard(
-    match: MatchResultDto,
+    match: DeveloperMatch,
     onClick: () -> Unit,
     onRequestCollaboration: () -> Unit
 ) {
@@ -133,7 +134,7 @@ fun DeveloperMatchCard(
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     Text(
-                        text = match.developer.experienceLevel ?: "Intermediate",
+                        text = match.developer.experienceLevel.name.lowercase().replaceFirstChar { it.uppercase() },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
@@ -141,13 +142,13 @@ fun DeveloperMatchCard(
                 
                 Surface(
                     shape = MaterialTheme.shapes.small,
-                    color = getMatchColor(match.matchPercentage).copy(alpha = 0.1f)
+                    color = getMatchColor(match.score).copy(alpha = 0.1f)
                 ) {
                     Text(
-                        text = "${match.matchPercentage}% Match",
+                        text = "${match.score}% Match",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = getMatchColor(match.matchPercentage)
+                        color = getMatchColor(match.score)
                     )
                 }
             }
@@ -161,35 +162,51 @@ fun DeveloperMatchCard(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
-                FlowRow(modifier = Modifier.padding(top = 4.dp)) {
+                Row(
+                    modifier = Modifier.padding(top = 4.dp).horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     match.matchedSkills.forEach { skill ->
                         SkillChip(skill = skill)
                     }
                 }
             }
 
-            if (match.reasons.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                ) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        match.reasons.forEach { reason ->
-                            Row(verticalAlignment = Alignment.Top) {
-                                Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(14.dp).padding(top = 2.dp), tint = MaterialTheme.colorScheme.primary)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(text = reason, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                            }
-                        }
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraSmall,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = match.compatibilityLabel,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = match.explanation,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
                     onClick = onClick,
                     modifier = Modifier.weight(1f),
@@ -210,11 +227,12 @@ fun DeveloperMatchCard(
 }
 
 @Composable
-private fun getMatchColor(percentage: Int): Color {
+private fun getMatchColor(score: Int): Color {
     return when {
-        percentage >= 90 -> Color(0xFF2E7D32) // Excellent
-        percentage >= 70 -> Color(0xFF1976D2) // Good
-        percentage >= 50 -> Color(0xFFFBC02D) // Potential
+        score >= 92 -> Color(0xFF2E7D32) // Excellent
+        score >= 80 -> Color(0xFF1976D2) // Strong
+        score >= 65 -> Color(0xFFFBC02D) // Good
+        score >= 50 -> Color(0xFFF57C00) // Potential
         else -> Color.Gray
     }
 }
