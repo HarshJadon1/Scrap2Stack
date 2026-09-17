@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scrap2stack.app.domain.model.CharmContribution
 import com.scrap2stack.app.domain.repository.CharmsRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,13 +35,18 @@ class CharmsViewModel(
         viewModelScope.launch {
             _uiState.value = CharmsUiState.Loading
             try {
-                val charmsResult = charmsRepository.getUserCharms()
-                val historyResult = charmsRepository.getContributionHistory()
+                coroutineScope {
+                    val charmsDeferred = async { charmsRepository.getUserCharms() }
+                    val historyDeferred = async { charmsRepository.getContributionHistory() }
 
-                _uiState.value = CharmsUiState.Success(
-                    totalCharms = charmsResult.getOrDefault(0),
-                    history = historyResult.getOrDefault(emptyList())
-                )
+                    val charmsResult = charmsDeferred.await()
+                    val historyResult = historyDeferred.await()
+
+                    _uiState.value = CharmsUiState.Success(
+                        totalCharms = charmsResult.getOrDefault(0),
+                        history = historyResult.getOrDefault(emptyList())
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.value = CharmsUiState.Error("Failed to load charms: ${e.localizedMessage}")
             }

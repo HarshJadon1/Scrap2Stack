@@ -5,20 +5,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.scrap2stack.app.core.network.SessionManager
-import com.scrap2stack.app.data.repository.AuthRepository
+import com.scrap2stack.app.data.repository.AuthRepositoryImpl
 import com.scrap2stack.app.data.repository.CharmsRepositoryImpl
 import com.scrap2stack.app.data.repository.CollaborationRepositoryImpl
 import com.scrap2stack.app.data.repository.NotificationRepositoryImpl
 import com.scrap2stack.app.data.repository.ProjectRepositoryImpl
-import com.scrap2stack.app.data.repository.TeamRepositoryImpl
 import com.scrap2stack.app.data.repository.UserRepositoryImpl
+import com.scrap2stack.app.data.repository.WorkspaceRepositoryImpl
+import com.scrap2stack.app.domain.repository.AuthRepository
 import com.scrap2stack.app.domain.repository.CharmsRepository
 import com.scrap2stack.app.domain.repository.NotificationRepository
 import com.scrap2stack.app.domain.repository.ProjectRepository
 import com.scrap2stack.app.domain.repository.UserRepository
+import com.scrap2stack.app.domain.repository.WorkspaceRepository
 import com.scrap2stack.app.domain.service.MatchingEngine
 import com.scrap2stack.app.domain.usecase.*
 import com.scrap2stack.app.feature.MainScreen
@@ -48,12 +52,14 @@ import com.scrap2stack.app.feature.project.*
 import com.scrap2stack.app.feature.settings.SettingsScreen
 import com.scrap2stack.app.feature.splash.SplashScreen
 import com.scrap2stack.app.feature.workspace.ProjectWorkspaceScreen
+import com.scrap2stack.app.feature.workspace.WorkspaceViewModel
+import com.scrap2stack.app.feature.workspace.WorkspaceViewModelFactory
 
 @Composable
 fun NavGraph(navController: NavHostController) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager.getInstance(context) }
-    val authRepository = remember { AuthRepository(sessionManager) }
+    val authRepository: AuthRepository = remember { AuthRepositoryImpl(sessionManager) }
     
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(authRepository)
@@ -63,9 +69,9 @@ fun NavGraph(navController: NavHostController) {
     val userRepository: UserRepository = remember { UserRepositoryImpl() }
     val projectRepository: ProjectRepository = remember { ProjectRepositoryImpl() }
     val collaborationRepository = remember { CollaborationRepositoryImpl() }
-    val teamRepository = remember { TeamRepositoryImpl() }
     val charmsRepository: CharmsRepository = remember { CharmsRepositoryImpl() }
     val notificationRepository: NotificationRepository = remember { NotificationRepositoryImpl() }
+    val workspaceRepository: WorkspaceRepository = remember { WorkspaceRepositoryImpl() }
 
     val matchingEngine = remember { MatchingEngine() }
     val getDeveloperMatchesUseCase = remember {
@@ -145,7 +151,8 @@ fun NavGraph(navController: NavHostController) {
                     getSentRequestsUseCase = GetSentCollaborationRequestsUseCase(collaborationRepository),
                     acceptRequestUseCase = AcceptCollaborationRequestUseCase(collaborationRepository),
                     rejectRequestUseCase = RejectCollaborationRequestUseCase(collaborationRepository),
-                    cancelRequestUseCase = CancelCollaborationRequestUseCase(collaborationRepository)
+                    cancelRequestUseCase = CancelCollaborationRequestUseCase(collaborationRepository),
+                    collaborationRepository = collaborationRepository
                 )
             )
 
@@ -190,7 +197,8 @@ fun NavGraph(navController: NavHostController) {
                 factory = ProjectDetailsViewModelFactory(
                     getProjectDetailsUseCase,
                     deleteProjectUseCase,
-                    projectRepository
+                    projectRepository,
+                    userRepository
                 )
             )
             ProjectDetailsScreen(
@@ -218,7 +226,11 @@ fun NavGraph(navController: NavHostController) {
         }
         
         composable(Screen.GitHubImport.route) {
+            val gitHubImportViewModel: GitHubImportViewModel = viewModel(
+                factory = GitHubImportViewModelFactory(projectRepository)
+            )
             GitHubImportScreen(
+                viewModel = gitHubImportViewModel,
                 onNavigateBack = actions.navigateBack,
                 onNavigateToAnalysis = actions.navigateToScrapAI
             )
@@ -226,8 +238,12 @@ fun NavGraph(navController: NavHostController) {
         
         composable(Screen.ScrapAIAnalysis.route) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            val scrapAIAnalysisViewModel: ScrapAIAnalysisViewModel = viewModel(
+                factory = ScrapAIAnalysisViewModelFactory(projectRepository)
+            )
             ScrapAIAnalysisScreen(
                 projectId = projectId,
+                viewModel = scrapAIAnalysisViewModel,
                 onNavigateBack = actions.navigateBack,
                 onNavigateToRevivalScore = { actions.navigateToRevivalScore(projectId) }
             )
@@ -235,8 +251,12 @@ fun NavGraph(navController: NavHostController) {
         
         composable(Screen.RevivalScore.route) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            val revivalScoreViewModel: RevivalScoreViewModel = viewModel(
+                factory = RevivalScoreViewModelFactory(projectRepository)
+            )
             RevivalScoreScreen(
                 projectId = projectId,
+                viewModel = revivalScoreViewModel,
                 onNavigateBack = actions.navigateBack,
                 onNavigateToRequiredSkills = { actions.navigateToRequiredSkills(projectId) }
             )
@@ -244,8 +264,12 @@ fun NavGraph(navController: NavHostController) {
         
         composable(Screen.RequiredSkills.route) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            val requiredSkillsViewModel: RequiredSkillsViewModel = viewModel(
+                factory = RequiredSkillsViewModelFactory(projectRepository)
+            )
             RequiredSkillsScreen(
                 projectId = projectId,
+                viewModel = requiredSkillsViewModel,
                 onNavigateBack = actions.navigateBack,
                 onNavigateToMatches = { actions.navigateToDeveloperMatches(projectId) }
             )
@@ -260,15 +284,24 @@ fun NavGraph(navController: NavHostController) {
                 projectId = projectId,
                 viewModel = matchingViewModel,
                 onNavigateBack = actions.navigateBack,
-                onNavigateToDeveloperProfile = actions.navigateToDeveloperProfile,
+                onNavigateToDeveloperProfile = { developerId ->
+                    actions.navigateToDeveloperProfile(developerId, projectId)
+                },
                 onNavigateToRequestCollaboration = { developerId ->
                     actions.navigateToCollaborationRequest(projectId, developerId)
                 }
             )
         }
         
-        composable(Screen.DeveloperProfile.route) { backStackEntry ->
+        composable(
+            route = Screen.DeveloperProfile.route,
+            arguments = listOf(
+                navArgument("developerId") { type = NavType.StringType },
+                navArgument("projectId") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) { backStackEntry ->
             val developerId = backStackEntry.arguments?.getString("developerId") ?: ""
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
             val devProfileViewModel: DeveloperProfileViewModel = viewModel(
                 factory = DeveloperProfileViewModelFactory(userRepository)
             )
@@ -276,7 +309,13 @@ fun NavGraph(navController: NavHostController) {
                 developerId = developerId,
                 viewModel = devProfileViewModel,
                 onNavigateBack = actions.navigateBack,
-                onRequestCollaboration = actions.navigateBack
+                onRequestCollaboration = {
+                    if (projectId.isNotBlank()) {
+                        actions.navigateToCollaborationRequest(projectId, developerId)
+                    } else {
+                        actions.navigateBack()
+                    }
+                }
             )
         }
         
@@ -288,7 +327,8 @@ fun NavGraph(navController: NavHostController) {
                     getSentRequestsUseCase = GetSentCollaborationRequestsUseCase(collaborationRepository),
                     acceptRequestUseCase = AcceptCollaborationRequestUseCase(collaborationRepository),
                     rejectRequestUseCase = RejectCollaborationRequestUseCase(collaborationRepository),
-                    cancelRequestUseCase = CancelCollaborationRequestUseCase(collaborationRepository)
+                    cancelRequestUseCase = CancelCollaborationRequestUseCase(collaborationRepository),
+                    collaborationRepository = collaborationRepository
                 )
             )
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
@@ -310,7 +350,8 @@ fun NavGraph(navController: NavHostController) {
                     getSentRequestsUseCase = GetSentCollaborationRequestsUseCase(collaborationRepository),
                     acceptRequestUseCase = AcceptCollaborationRequestUseCase(collaborationRepository),
                     rejectRequestUseCase = RejectCollaborationRequestUseCase(collaborationRepository),
-                    cancelRequestUseCase = CancelCollaborationRequestUseCase(collaborationRepository)
+                    cancelRequestUseCase = CancelCollaborationRequestUseCase(collaborationRepository),
+                    collaborationRepository = collaborationRepository
                 )
             )
             CollaborationRequestsScreen(
@@ -321,8 +362,12 @@ fun NavGraph(navController: NavHostController) {
         
         composable(Screen.Workspace.route) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
+            val workspaceViewModel: WorkspaceViewModel = viewModel(
+                factory = WorkspaceViewModelFactory(workspaceRepository)
+            )
             ProjectWorkspaceScreen(
                 projectId = projectId,
+                viewModel = workspaceViewModel,
                 onNavigateBack = actions.navigateBack,
                 onNavigateToMatches = { actions.navigateToDeveloperMatches(projectId) }
             )
@@ -431,8 +476,8 @@ class NavActions(navController: NavHostController) {
         navController.navigate(Screen.RequiredSkills.createRoute(projectId))
     }
 
-    val navigateToDeveloperProfile: (String) -> Unit = { developerId ->
-        navController.navigate(Screen.DeveloperProfile.createRoute(developerId))
+    val navigateToDeveloperProfile: (String, String) -> Unit = { developerId, projectId ->
+        navController.navigate(Screen.DeveloperProfile.createRoute(developerId, projectId))
     }
 
     val navigateToCollaborationRequest: (String, String) -> Unit = { projectId, developerId ->

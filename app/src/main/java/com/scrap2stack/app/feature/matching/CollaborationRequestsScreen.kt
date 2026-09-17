@@ -101,14 +101,17 @@ fun ReceivedRequestCard(
     onAccept: () -> Unit,
     onReject: () -> Unit
 ) {
+    val senderName = request.sender?.name?.ifBlank { null } ?: request.sender?.username ?: "Developer"
+    val projectName = request.project?.name?.ifBlank { null } ?: "Project"
+
     Scrap2StackCard {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Avatar(name = request.sender?.name ?: "User", modifier = Modifier.size(40.dp))
+                Avatar(name = senderName, modifier = Modifier.size(40.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = request.sender?.name ?: "Unknown", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    Text(text = "Invited you to: ${request.project?.name ?: "Project"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    Text(text = senderName, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text(text = "Invited you to join: $projectName", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                 }
             }
             
@@ -119,7 +122,7 @@ fun ReceivedRequestCard(
                 shape = MaterialTheme.shapes.small
             ) {
                 Text(
-                    text = "Role: ${request.proposedRole}",
+                    text = "Proposed Role: ${request.proposedRole}",
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
@@ -133,12 +136,27 @@ fun ReceivedRequestCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onReject, modifier = Modifier.weight(1f), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
-                    Text("Reject")
+            if (request.status.name == "PENDING") {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onReject, modifier = Modifier.weight(1f), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                        Text("Reject")
+                    }
+                    Button(onClick = onAccept, modifier = Modifier.weight(1f)) {
+                        Text("Accept")
+                    }
                 }
-                Button(onClick = onAccept, modifier = Modifier.weight(1f)) {
-                    Text("Accept")
+            } else {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = "Status: ${request.status.name}",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -150,12 +168,17 @@ fun SentRequestCard(
     request: CollaborationRequest,
     onCancel: () -> Unit
 ) {
+    val receiverName = request.receiver?.name?.ifBlank { null } ?: request.receiver?.username ?: "Developer"
+    val projectName = request.project?.name?.ifBlank { null } ?: "Project"
+
     Scrap2StackCard {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Avatar(name = receiverName, modifier = Modifier.size(40.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Sent Request", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    Text(text = "Project ID: ${request.projectId}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    Text(text = "Sent to: $receiverName", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text(text = "Project: $projectName", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                 }
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
@@ -164,9 +187,23 @@ fun SentRequestCard(
                     Text(
                         text = request.status.name,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = MaterialTheme.shapes.small
+            ) {
+                Text(
+                    text = "Role: ${request.proposedRole}",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall
+                )
             }
 
             if (request.message.isNotEmpty()) {
@@ -174,14 +211,16 @@ fun SentRequestCard(
                 Text(text = request.message, style = MaterialTheme.typography.bodyMedium)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            if (request.status.name == "PENDING") {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text("Cancel Request")
+                OutlinedButton(
+                    onClick = onCancel,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Cancel Request")
+                }
             }
         }
     }

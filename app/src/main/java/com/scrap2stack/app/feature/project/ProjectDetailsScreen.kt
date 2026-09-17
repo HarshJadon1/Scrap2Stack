@@ -24,8 +24,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.*
-import com.scrap2stack.app.data.remote.dto.ProjectDto
+import com.scrap2stack.app.domain.model.Project
 import com.scrap2stack.app.domain.model.ProjectAnalysis
+import com.scrap2stack.app.domain.service.ScrapAIEngine
 import com.scrap2stack.app.ui.theme.StatusAbandoned
 import com.scrap2stack.app.ui.theme.StatusCompleted
 import com.scrap2stack.app.ui.theme.StatusReviving
@@ -106,7 +107,7 @@ fun ProjectDetailsScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProjectDetailsContent(
-    project: ProjectDto,
+    project: Project,
     analysis: ProjectAnalysis?,
     innerPadding: PaddingValues,
     onNavigateToScrapAI: () -> Unit,
@@ -132,13 +133,13 @@ private fun ProjectDetailsContent(
                 modifier = Modifier.weight(1f)
             )
             
-            val statusColor = when (project.status) {
+            val statusColor = when (project.status.name) {
                 "ABANDONED" -> StatusAbandoned
                 "REVIVING" -> StatusReviving
                 "COMPLETED" -> StatusCompleted
                 else -> Color.Gray
             }
-            StatusChip(status = project.status, color = statusColor)
+            StatusChip(status = project.status.name, color = statusColor)
         }
 
         if (project.technologies.isNotEmpty()) {
@@ -152,9 +153,17 @@ private fun ProjectDetailsContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        val displayScore = if (project.revivalScore > 0) {
+            project.revivalScore
+        } else if (analysis != null && analysis.revivalScore > 0) {
+            analysis.revivalScore
+        } else {
+            ScrapAIEngine.calculateRevivalScore(project)
+        }
+
         // Scores
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            ScoreCard(label = "Revival Potential", score = "${project.revivalScore}%", modifier = Modifier.weight(1f))
+            ScoreCard(label = "Revival Potential", score = "${displayScore}%", modifier = Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -173,11 +182,11 @@ private fun ProjectDetailsContent(
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
-        if (!project.problem.isNull_or_blank_safe()) {
+        if (project.problem.isNotBlank()) {
             Spacer(modifier = Modifier.height(8.dp))
             Text("Why was it abandoned?", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Text(
-                text = project.problem ?: "",
+                text = project.problem,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                 modifier = Modifier.padding(vertical = 4.dp)
@@ -242,7 +251,7 @@ private fun ProjectDetailsContent(
 
         Spacer(modifier = Modifier.height(16.dp))
         
-        if (!project.githubUrl.isNullOrBlank()) {
+        if (project.githubUrl.isNotBlank()) {
             val uriHandler = LocalUriHandler.current
             TextButton(
                 onClick = {
@@ -270,10 +279,6 @@ private fun ProjectDetailsContent(
 
         Spacer(modifier = Modifier.height(48.dp))
     }
-}
-
-private fun String?.isNull_or_blank_safe(): Boolean {
-    return this == null || this.trim().isEmpty()
 }
 
 @Composable

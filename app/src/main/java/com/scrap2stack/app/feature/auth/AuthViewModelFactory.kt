@@ -2,7 +2,7 @@ package com.scrap2stack.app.feature.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.scrap2stack.app.data.repository.AuthRepository
+import com.scrap2stack.app.domain.repository.AuthRepository
 
 class AuthViewModelFactory(private val repository: AuthRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

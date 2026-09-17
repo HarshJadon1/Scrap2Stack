@@ -2,7 +2,6 @@ package com.scrap2stack.app.feature.project
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scrap2stack.app.data.repository.ProjectRepositoryImpl
 import com.scrap2stack.app.domain.model.ProjectAnalysis
 import com.scrap2stack.app.domain.repository.ProjectRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +16,7 @@ sealed class ScrapAIAnalysisState {
 }
 
 class ScrapAIAnalysisViewModel(
-    private val repository: ProjectRepository = ProjectRepositoryImpl()
+    private val repository: ProjectRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ScrapAIAnalysisState>(ScrapAIAnalysisState.Loading)

@@ -2,6 +2,7 @@ package com.scrap2stack.app.feature.matching
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.scrap2stack.app.domain.repository.CollaborationRepository
 import com.scrap2stack.app.domain.usecase.*
 
 class CollaborationViewModelFactory(
@@ -10,7 +11,8 @@ class CollaborationViewModelFactory(
     private val getSentRequestsUseCase: GetSentCollaborationRequestsUseCase,
     private val acceptRequestUseCase: AcceptCollaborationRequestUseCase,
     private val rejectRequestUseCase: RejectCollaborationRequestUseCase,
-    private val cancelRequestUseCase: CancelCollaborationRequestUseCase
+    private val cancelRequestUseCase: CancelCollaborationRequestUseCase,
+    private val collaborationRepository: CollaborationRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CollaborationViewModel::class.java)) {
@@ -21,7 +23,8 @@ class CollaborationViewModelFactory(
                 getSentRequestsUseCase,
                 acceptRequestUseCase,
                 rejectRequestUseCase,
-                cancelRequestUseCase
+                cancelRequestUseCase,
+                collaborationRepository
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

@@ -2,38 +2,42 @@ package com.scrap2stack.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Modern Scrap2Stack Brand Palette (Developer Slate & Neon Accent)
-val PrimaryBlue = Color(0xFF3B82F6)        // Vibrant Electric Blue
-val PrimaryBlueLight = Color(0xFF60A5FA)   // Light Sky Blue
-val PrimaryBlueDark = Color(0xFF1D4ED8)    // Deep Royal Blue
+// Premium Scrap2Stack Pro Palette (Obsidian Slate & Electric Neon)
+val PrimaryIndigo = Color(0xFF6366F1)        // Electric Violet Indigo
+val PrimaryIndigoLight = Color(0xFF818CF8)   // Light Indigo
+val PrimaryIndigoDark = Color(0xFF4F46E5)    // Deep Royal Indigo
 
 val RevivalEmerald = Color(0xFF10B981)     // Vibrant Revival Emerald
 val RevivalEmeraldLight = Color(0xFF34D399)// Light Emerald
-val RevivalEmeraldDark = Color(0xFF047857) // Dark Emerald
+val RevivalEmeraldDark = Color(0xFF059669) // Dark Emerald
 
-// Dark Theme Surfaces (Rich Midnight Slate)
-val SlateBackgroundDark = Color(0xFF0F172A) // Slate 900
-val SlateSurfaceDark = Color(0xFF1E293B)    // Slate 800
-val SlateSurfaceVariantDark = Color(0xFF334155) // Slate 700
-val SlateOnSurfaceDark = Color(0xFFF8FAFC)  // Slate 50
+// Premium Dark Theme Surfaces (Deep Obsidian Slate)
+val SlateBackgroundDark = Color(0xFF090D16) // Deep Obsidian Slate
+val SlateSurfaceDark = Color(0xFF111827)    // Rich Slate 900
+val SlateSurfaceVariantDark = Color(0xFF1F2937) // Slate 800
+val SlateOnSurfaceDark = Color(0xFFF9FAFB)  // Slate 50
 
-// Light Theme Surfaces (Clean Studio Slate)
+// Premium Light Theme Surfaces (Crisp Studio Light)
 val SlateBackgroundLight = Color(0xFFF8FAFC) // Slate 50
 val SlateSurfaceLight = Color(0xFFFFFFFF)    // Pure White
 val SlateSurfaceVariantLight = Color(0xFFF1F5F9) // Slate 100
 val SlateOnSurfaceLight = Color(0xFF0F172A)  // Slate 900
 
-// Status Colors
-val StatusAbandoned = Color(0xFFEF4444)     // Crimson Red
+// Status Accent Colors
+val StatusAbandoned = Color(0xFFF43F5E)     // Coral Crimson
 val StatusReviving = Color(0xFFF59E0B)      // Amber Orange
 val StatusCompleted = Color(0xFF10B981)     // Emerald Green
-val StatusIdea = Color(0xFF3B82F6)          // Tech Blue
+val StatusIdea = Color(0xFF6366F1)          // Tech Indigo
 val StatusPaused = Color(0xFF64748B)        // Muted Slate
 
 // Legacy mappings for backwards compatibility
-val TechBlue = PrimaryBlue
-val TechBlueLight = PrimaryBlueLight
-val TechBlueDark = PrimaryBlueDark
+val TechBlue = PrimaryIndigo
+val TechBlueLight = PrimaryIndigoLight
+val TechBlueDark = PrimaryIndigoDark
+
+val PrimaryBlue = PrimaryIndigo
+val PrimaryBlueLight = PrimaryIndigoLight
+val PrimaryBlueDark = PrimaryIndigoDark
 
 val RevivalGreen = RevivalEmerald
 val RevivalGreenLight = RevivalEmeraldLight
@@ -43,9 +47,9 @@ val ScrapGray = SlateSurfaceDark
 val ScrapBlack = SlateBackgroundDark
 val ScrapWhite = SlateOnSurfaceDark
 
-val Primary = PrimaryBlue
+val Primary = PrimaryIndigo
 val OnPrimary = Color.White
-val PrimaryContainer = PrimaryBlueDark
+val PrimaryContainer = PrimaryIndigoDark
 val OnPrimaryContainer = Color.White
 
 val Secondary = RevivalEmerald

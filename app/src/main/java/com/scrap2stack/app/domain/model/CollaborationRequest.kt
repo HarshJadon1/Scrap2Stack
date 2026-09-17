@@ -1,5 +1,8 @@
 package com.scrap2stack.app.domain.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class CollaborationRequest(
     val id: String,
     val projectId: String,

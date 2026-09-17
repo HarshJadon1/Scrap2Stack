@@ -74,7 +74,9 @@ data class CreateProjectRequest(
     val githubUrl: String? = null,
     @SerialName("team_size")
     val teamSize: Int = 4,
-    val difficulty: String = "INTERMEDIATE"
+    val difficulty: String = "INTERMEDIATE",
+    @SerialName("revival_score")
+    val revivalScore: Int = 75
 )
 
 @Serializable

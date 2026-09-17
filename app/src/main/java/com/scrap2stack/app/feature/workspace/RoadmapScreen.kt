@@ -15,12 +15,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.Scrap2StackCard
 import com.scrap2stack.app.core.ui.components.SectionHeader
-import com.scrap2stack.app.data.remote.dto.RoadmapItemDto
+import com.scrap2stack.app.domain.model.RoadmapItem
 
 @Composable
 fun RoadmapScreen(
     projectId: String,
-    roadmapItems: List<RoadmapItemDto>
+    roadmapItems: List<RoadmapItem>
 ) {
     Column(
         modifier = Modifier
@@ -48,7 +48,7 @@ fun RoadmapScreen(
 }
 
 @Composable
-fun RoadmapPhaseCard(item: RoadmapItemDto) {
+fun RoadmapPhaseCard(item: RoadmapItem) {
     Scrap2StackCard {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(

@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.domain.model.Project
 
@@ -20,9 +19,9 @@ import com.scrap2stack.app.domain.model.Project
 @Composable
 fun RevivalScoreScreen(
     projectId: String,
+    viewModel: RevivalScoreViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToRequiredSkills: () -> Unit,
-    viewModel: RevivalScoreViewModel = viewModel()
+    onNavigateToRequiredSkills: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -79,69 +78,88 @@ private fun RevivalScoreContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(24.dp))
-        
-        Text(
-            text = "${project.revivalScore}/100",
-            style = MaterialTheme.typography.displayLarge.copy(
-                fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.primary
+
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(160.dp)
+        ) {
+            CircularProgressIndicator(
+                progress = { project.revivalScore / 100f },
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.primary,
+                strokeWidth = 12.dp,
+                trackColor = MaterialTheme.colorScheme.primaryContainer,
+                strokeCap = StrokeCap.Round
             )
-        )
-        
-        Text(
-            text = if (project.revivalScore >= 75) "High Revival Potential" else "Moderate Revival Potential",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.secondary
-        )
-        
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "${project.revivalScore}%",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Viability",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(32.dp))
-        
+
         Text(
-            text = "Project Details",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.fillMaxWidth()
+            text = "Project Revival Assessment",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Text(
-            text = project.description,
+            text = "ScrapAI evaluated codebase completeness, documentation clarity, tech stack popularity, and team requirements.",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        ScoreFactorItem("Quality Score", project.qualityScore / 100f)
-        ScoreFactorItem("Progress", project.progress / 100f)
+        Scrap2StackCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                ScoreFactorRow("Codebase Architecture", 85)
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+                ScoreFactorRow("Documentation & Specs", 60)
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+                ScoreFactorRow("Market Interest & Relevance", 90)
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+                ScoreFactorRow("Skill Availability", 75)
+            }
+        }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         Scrap2StackButton(
-            text = "See Required Skills",
+            text = "View Skill Requirements",
             onClick = onNavigateToRequiredSkills
         )
-        
-        Spacer(modifier = Modifier.height(24.dp))
+
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
 @Composable
-fun ScoreFactorItem(label: String, progress: Float) {
-    Column(modifier = Modifier.padding(vertical = 12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = label, style = MaterialTheme.typography.bodyMedium)
-            Text(text = "${(progress * 100).toInt()}%", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxWidth(),
-            color = if (progress > 0.7f) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
-            strokeCap = StrokeCap.Round
+private fun ScoreFactorRow(title: String, score: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = "$score/100",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }

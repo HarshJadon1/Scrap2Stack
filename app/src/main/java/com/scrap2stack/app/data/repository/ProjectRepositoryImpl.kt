@@ -4,6 +4,7 @@ import com.scrap2stack.app.core.network.supabase
 import com.scrap2stack.app.data.remote.dto.*
 import com.scrap2stack.app.domain.model.*
 import com.scrap2stack.app.domain.repository.ProjectRepository
+import com.scrap2stack.app.domain.service.ScrapAIEngine
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
@@ -255,6 +256,8 @@ class ProjectRepositoryImpl : ProjectRepository {
             val userId = supabase.auth.currentSessionOrNull()?.user?.id
                 ?: return@withContext Result.failure(Exception("User not authenticated"))
 
+            val computedScore = if (project.revivalScore > 0) project.revivalScore else ScrapAIEngine.calculateRevivalScore(project)
+
             val projectToInsert = CreateProjectRequest(
                 ownerId = userId,
                 name = project.name,
@@ -265,7 +268,8 @@ class ProjectRepositoryImpl : ProjectRepository {
                 technologies = project.technologies,
                 requiredSkills = project.requiredSkills,
                 githubUrl = project.githubUrl.ifBlank { null },
-                teamSize = if (project.teamSize > 0) project.teamSize else 4
+                teamSize = if (project.teamSize > 0) project.teamSize else 4,
+                revivalScore = computedScore
             )
             
             val createdDto = supabase.from("projects")
@@ -273,8 +277,16 @@ class ProjectRepositoryImpl : ProjectRepository {
                     select()
                 }
                 .decodeSingle<ProjectDto>()
+
+            val createdProject = createdDto.toDomain()
+
+            // Automatically generate and persist initial ScrapAI Analysis for new projects
+            try {
+                val initialAnalysis = ScrapAIEngine.generateAnalysis(createdProject)
+                supabase.from("project_ai_analyses").insert(initialAnalysis)
+            } catch (ignored: Exception) {}
             
-            Result.success(createdDto.toDomain())
+            Result.success(createdProject)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -321,7 +333,7 @@ class ProjectRepositoryImpl : ProjectRepository {
 
     override suspend fun generateProjectAnalysis(projectId: String): Result<ProjectAnalysis> = withContext(Dispatchers.IO) {
         try {
-            val dto = supabase.from("project_ai_analyses")
+            val existing = supabase.from("project_ai_analyses")
                 .select {
                     filter { eq("project_id", projectId) }
                     order("created_at", Order.DESCENDING)
@@ -329,10 +341,24 @@ class ProjectRepositoryImpl : ProjectRepository {
                 }
                 .decodeSingleOrNull<AnalysisDto>()
 
-            if (dto != null) {
-                Result.success(dto.toDomain())
+            if (existing != null) {
+                return@withContext Result.success(existing.toDomain())
+            }
+
+            val projectResult = getProjectById(projectId)
+            val project = projectResult.getOrNull()
+            if (project != null) {
+                val newAnalysisDto = ScrapAIEngine.generateAnalysis(project)
+                try {
+                    val saved = supabase.from("project_ai_analyses")
+                        .insert(newAnalysisDto) { select() }
+                        .decodeSingle<AnalysisDto>()
+                    Result.success(saved.toDomain())
+                } catch (e: Exception) {
+                    Result.success(newAnalysisDto.toDomain())
+                }
             } else {
-                Result.failure(Exception("No analysis found. Please trigger analysis via Edge Function."))
+                Result.failure(Exception("Project not found"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -349,14 +375,28 @@ class ProjectRepositoryImpl : ProjectRepository {
                 }
                 .decodeSingleOrNull<AnalysisDto>()
             
-            Result.success(dto?.toDomain())
+            if (dto != null) {
+                return@withContext Result.success(dto.toDomain())
+            }
+
+            val projectResult = getProjectById(projectId)
+            val project = projectResult.getOrNull()
+            if (project != null) {
+                val newAnalysisDto = ScrapAIEngine.generateAnalysis(project)
+                try {
+                    supabase.from("project_ai_analyses").insert(newAnalysisDto)
+                } catch (ignored: Exception) {}
+                Result.success(newAnalysisDto.toDomain())
+            } else {
+                Result.success(null)
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
     private fun ProjectDto.toDomain(): Project {
-        return Project(
+        val domainProject = Project(
             id = id,
             ownerId = ownerId,
             name = name,
@@ -371,6 +411,10 @@ class ProjectRepositoryImpl : ProjectRepository {
             category = category ?: "",
             githubUrl = githubUrl ?: ""
         )
+
+        val finalScore = if (revivalScore > 0) revivalScore else ScrapAIEngine.calculateRevivalScore(domainProject)
+
+        return domainProject.copy(revivalScore = finalScore)
     }
 
     private fun Project.toDto(): ProjectDto {
@@ -417,7 +461,7 @@ class ProjectRepositoryImpl : ProjectRepository {
 
     private fun SkillRequirementDto.toDomain() = RequiredSkillRecommendation(
         skill = name,
-        importance = Importance.RECOMMENDED
+        importance = try { Importance.valueOf(importance.uppercase()) } catch (e: Exception) { Importance.RECOMMENDED }
     )
 
     private fun RoadmapStepDto.toDomain() = RoadmapStep(

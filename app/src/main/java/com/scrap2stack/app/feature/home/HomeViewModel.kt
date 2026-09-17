@@ -2,12 +2,12 @@ package com.scrap2stack.app.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scrap2stack.app.data.remote.dto.ProjectDto
-import com.scrap2stack.app.data.remote.dto.ProjectRecommendationDto
 import com.scrap2stack.app.domain.model.Developer
 import com.scrap2stack.app.domain.model.Project
 import com.scrap2stack.app.domain.repository.ProjectRepository
 import com.scrap2stack.app.domain.repository.UserRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,24 +39,24 @@ class HomeViewModel(
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val userResult = userRepository.getMyProfile()
-                val recommendedResult = projectRepository.getFeaturedProjects()
-                val trendingResult = projectRepository.getRecentProjects()
-                
-                if (recommendedResult.isSuccess && trendingResult.isSuccess) {
+                // Execute network calls in parallel for minimum latency
+                coroutineScope {
+                    val userDeferred = async { userRepository.getMyProfile() }
+                    val recommendedDeferred = async { projectRepository.getFeaturedProjects() }
+                    val trendingDeferred = async { projectRepository.getRecentProjects() }
+
+                    val userResult = userDeferred.await()
+                    val recommendedResult = recommendedDeferred.await()
+                    val trendingResult = trendingDeferred.await()
+
                     _uiState.value = HomeUiState.Success(
                         user = userResult.getOrNull(),
                         recommendedProjects = recommendedResult.getOrDefault(emptyList()),
                         trendingProjects = trendingResult.getOrDefault(emptyList())
                     )
-                } else {
-                    val errorMessage = recommendedResult.exceptionOrNull()?.message 
-                        ?: trendingResult.exceptionOrNull()?.message 
-                        ?: "Failed to load home data"
-                    _uiState.value = HomeUiState.Error(errorMessage)
                 }
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error("Unexpected error: ${e.localizedMessage}")
+                _uiState.value = HomeUiState.Error("Failed to load home data: ${e.localizedMessage}")
             }
         }
     }

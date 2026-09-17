@@ -15,8 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.*
-import com.scrap2stack.app.data.remote.dto.NotificationDto
-import com.scrap2stack.app.domain.model.CollaborationRequest
+import com.scrap2stack.app.domain.model.NotificationItem
 import com.scrap2stack.app.feature.matching.CollaborationViewModel
 import com.scrap2stack.app.feature.matching.ReceivedRequestCard
 import com.scrap2stack.app.feature.matching.RequestsUiState
@@ -178,7 +177,7 @@ fun NotificationsScreen(
 
 @Composable
 fun NotificationCard(
-    notification: NotificationDto,
+    notification: NotificationItem,
     onClick: () -> Unit
 ) {
     Scrap2StackCard(

@@ -13,9 +13,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryBlue,
+    primary = PrimaryIndigo,
     onPrimary = Color.White,
-    primaryContainer = PrimaryBlueDark,
+    primaryContainer = PrimaryIndigoDark,
     onPrimaryContainer = Color.White,
     secondary = RevivalEmerald,
     onSecondary = Color.White,
@@ -26,18 +26,18 @@ private val DarkColorScheme = darkColorScheme(
     surface = SlateSurfaceDark,
     onSurface = SlateOnSurfaceDark,
     surfaceVariant = SlateSurfaceVariantDark,
-    onSurfaceVariant = Color(0xFF94A3B8),
-    outline = Color(0xFF475569),
-    outlineVariant = Color(0xFF334155),
+    onSurfaceVariant = Color(0xFF9CA3AF),
+    outline = Color(0xFF374151),
+    outlineVariant = Color(0xFF1F2937),
     error = StatusAbandoned,
     onError = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = PrimaryBlueDark,
+    primary = PrimaryIndigoDark,
     onPrimary = Color.White,
-    primaryContainer = PrimaryBlueLight.copy(alpha = 0.2f),
-    onPrimaryContainer = PrimaryBlueDark,
+    primaryContainer = PrimaryIndigoLight.copy(alpha = 0.2f),
+    onPrimaryContainer = PrimaryIndigoDark,
     secondary = RevivalEmeraldDark,
     onSecondary = Color.White,
     secondaryContainer = RevivalEmeraldLight.copy(alpha = 0.2f),
@@ -65,7 +65,9 @@ fun Scrap2StackTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

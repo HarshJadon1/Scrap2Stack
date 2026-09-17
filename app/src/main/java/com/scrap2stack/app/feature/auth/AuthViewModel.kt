@@ -1,8 +1,8 @@
-package com.scrap2stack.app.feature.auth
+ package com.scrap2stack.app.feature.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scrap2stack.app.data.repository.AuthRepository
+import com.scrap2stack.app.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 

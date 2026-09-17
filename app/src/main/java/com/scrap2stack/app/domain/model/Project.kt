@@ -1,5 +1,8 @@
 package com.scrap2stack.app.domain.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class Project(
     val id: String = "",
     val ownerId: String = "",

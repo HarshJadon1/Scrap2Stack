@@ -11,15 +11,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.Scrap2StackButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GitHubImportScreen(
+    viewModel: GitHubImportViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToAnalysis: (String) -> Unit,
-    viewModel: GitHubImportViewModel = viewModel()
+    onNavigateToAnalysis: (String) -> Unit
 ) {
     var repoUrl by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
@@ -57,66 +56,63 @@ fun GitHubImportScreen(
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
-                text = "Analyze Repository",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                text = "Import Open Source Project",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
-                text = "ScrapAI will analyze the repository to identify technologies, required skills, project health and revival potential.",
+                text = "Enter any public GitHub repository URL. ScrapAI will analyze its codebase, detect required skills, and create a revival roadmap.",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedTextField(
                 value = repoUrl,
-                onValueChange = {
-                    repoUrl = it
-                    if (uiState is GitHubImportState.Error) {
-                        viewModel.resetState()
-                    }
-                },
-                label = { Text("Repository URL") },
-                placeholder = { Text("https://github.com/user/project") },
+                onValueChange = { repoUrl = it },
+                label = { Text("GitHub Repository URL") },
+                placeholder = { Text("https://github.com/owner/repository") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                enabled = uiState !is GitHubImportState.Loading,
-                isError = uiState is GitHubImportState.Error
+                enabled = uiState !is GitHubImportState.Loading
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (uiState is GitHubImportState.Error) {
                 Text(
                     text = (uiState as GitHubImportState.Error).message,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
-                    textAlign = TextAlign.Start
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            when (val state = uiState) {
-                is GitHubImportState.Loading -> {
+            if (uiState is GitHubImportState.Loading) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(state.message, style = MaterialTheme.typography.bodyMedium)
-                }
-                else -> {
-                    Scrap2StackButton(
-                        text = "Analyze Repository",
-                        onClick = { viewModel.importRepository(repoUrl) },
-                        enabled = repoUrl.isNotBlank() && repoUrl.contains("github.com")
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = (uiState as GitHubImportState.Loading).message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
+            } else {
+                Scrap2StackButton(
+                    text = "Analyze & Import",
+                    onClick = { viewModel.importRepository(repoUrl) },
+                    enabled = repoUrl.isNotBlank()
+                )
             }
         }
     }

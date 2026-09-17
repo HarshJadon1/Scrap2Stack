@@ -1,8 +1,10 @@
 package com.scrap2stack.app.feature.discovery
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
@@ -14,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.ErrorView
 import com.scrap2stack.app.core.ui.components.LoadingView
 import com.scrap2stack.app.core.ui.components.ProjectCard
-import com.scrap2stack.app.domain.model.Project
 
 enum class SortOrder {
     REVIVAL_DESC, REVIVAL_ASC, NEWEST
@@ -33,6 +34,10 @@ fun DiscoveryScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadProjects()
+    }
 
     Scaffold(
         topBar = {
@@ -67,6 +72,24 @@ fun DiscoveryScreen(
                     shape = MaterialTheme.shapes.medium,
                     singleLine = true
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Quick Filter Chips Bar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("ALL", "Web", "Mobile", "AI/ML", "Open Source", "DevOps").forEach { category ->
+                        FilterChip(
+                            selected = selectedCategory == category,
+                            onClick = { selectedCategory = category },
+                            label = { Text(category) }
+                        )
+                    }
+                }
             }
         }
     ) { innerPadding ->
@@ -98,7 +121,7 @@ fun DiscoveryScreen(
                     if (projects.isEmpty()) {
                         EmptyStateView(
                             message = if (searchQuery.isNotEmpty() || selectedCategory != "ALL" || selectedStatus != "ALL") 
-                                "No projects match your filter criteria." 
+                                "No projects match your search query or filter criteria." 
                             else 
                                 "No projects found.",
                             modifier = Modifier.fillMaxSize()
@@ -108,9 +131,10 @@ fun DiscoveryScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(horizontal = 24.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 24.dp)
                         ) {
-                            items(projects) { project ->
+                            items(projects, key = { it.id }) { project ->
                                 ProjectCard(
                                     project = project,
                                     onClick = { onNavigateToProjectDetails(project.id) }
@@ -148,19 +172,11 @@ fun DiscoveryScreen(
                         )
                     }
 
-                    Text("Category", style = MaterialTheme.typography.titleMedium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("ALL", "Web", "Mobile", "AI/ML", "DevOps").forEach { category ->
-                            FilterChip(
-                                selected = selectedCategory == category,
-                                onClick = { selectedCategory = category },
-                                label = { Text(category) }
-                            )
-                        }
-                    }
-
-                    Text("Status", style = MaterialTheme.typography.titleMedium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Status Filter", style = MaterialTheme.typography.titleMedium)
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         listOf("ALL", "ABANDONED", "INCOMPLETE", "REVIVING", "COMPLETED").forEach { status ->
                             FilterChip(
                                 selected = selectedStatus == status,
@@ -199,7 +215,7 @@ fun EmptyStateView(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Be the first to create a project!",
+                text = "Be the first to create or import a project!",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             )

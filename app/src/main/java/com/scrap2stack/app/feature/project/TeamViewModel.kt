@@ -2,7 +2,6 @@ package com.scrap2stack.app.feature.project
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scrap2stack.app.data.repository.TeamRepositoryImpl
 import com.scrap2stack.app.domain.model.ProjectMember
 import com.scrap2stack.app.domain.usecase.GetProjectMembersUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +16,7 @@ sealed class TeamUiState {
 }
 
 class TeamViewModel(
-    private val getProjectMembersUseCase: GetProjectMembersUseCase = GetProjectMembersUseCase(TeamRepositoryImpl())
+    private val getProjectMembersUseCase: GetProjectMembersUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<TeamUiState>(TeamUiState.Loading)

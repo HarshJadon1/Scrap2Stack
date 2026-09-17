@@ -11,7 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.domain.model.ProjectAnalysis
 
@@ -19,9 +18,9 @@ import com.scrap2stack.app.domain.model.ProjectAnalysis
 @Composable
 fun RequiredSkillsScreen(
     projectId: String,
+    viewModel: RequiredSkillsViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToMatches: () -> Unit,
-    viewModel: RequiredSkillsViewModel = viewModel()
+    onNavigateToMatches: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -53,7 +52,7 @@ fun RequiredSkillsScreen(
                 )
             }
             is RequiredSkillsState.Success -> {
-                SkillsContent(
+                RequiredSkillsContent(
                     analysis = state.analysis,
                     innerPadding = innerPadding,
                     onNavigateToMatches = onNavigateToMatches
@@ -63,8 +62,9 @@ fun RequiredSkillsScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SkillsContent(
+private fun RequiredSkillsContent(
     analysis: ProjectAnalysis,
     innerPadding: PaddingValues,
     onNavigateToMatches: () -> Unit
@@ -77,93 +77,61 @@ private fun SkillsContent(
             .verticalScroll(rememberScrollState())
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Text(
-            text = "Skills Needed to Revive This Project",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+            text = "AI Skill Gap Analysis",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
         )
-        
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Based on project code analysis, these technical skills are required to execute the revival roadmap successfully.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
 
-        analysis.requiredSkills.forEach { skillReq ->
-            SkillRequirementCard(
-                skill = skillReq.skill,
-                level = "INTERMEDIATE",
-                importance = skillReq.importance.name,
-                coverage = "Required"
-            )
+        if (analysis.requiredSkills.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxWidth().height(120.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("No specific skills required.", style = MaterialTheme.typography.bodyMedium)
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                analysis.requiredSkills.forEach { recommendation ->
+                    Scrap2StackCard(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = recommendation.skill,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            StatusChip(
+                                status = recommendation.importance.name,
+                                color = if (recommendation.importance.name == "CRITICAL") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            text = "Skill Coverage Summary",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = "Connect with developers on the platform who possess these required skills.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-        )
-
-        Spacer(modifier = Modifier.height(48.dp))
 
         Scrap2StackButton(
             text = "Find Developer Matches",
             onClick = onNavigateToMatches
         )
-        
-        Spacer(modifier = Modifier.height(24.dp))
-    }
-}
 
-@Composable
-fun SkillRequirementCard(
-    skill: String,
-    level: String,
-    importance: String,
-    coverage: String,
-    why: String? = null
-) {
-    Scrap2StackCard(modifier = Modifier.padding(vertical = 8.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = skill, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    Text(
-                        text = "Level: $level • Importance: $importance",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.secondaryContainer
-                ) {
-                    Text(
-                        text = coverage,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            }
-            if (why != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = why,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                )
-            }
-        }
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }

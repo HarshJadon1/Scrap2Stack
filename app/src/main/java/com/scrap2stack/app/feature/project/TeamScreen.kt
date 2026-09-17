@@ -10,8 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scrap2stack.app.core.ui.components.Avatar
 import com.scrap2stack.app.core.ui.components.ErrorView
 import com.scrap2stack.app.core.ui.components.LoadingView
@@ -23,9 +23,9 @@ import com.scrap2stack.app.domain.model.ProjectRole
 @Composable
 fun TeamScreen(
     projectId: String,
+    viewModel: TeamViewModel,
     onNavigateBack: () -> Unit,
-    onInviteDeveloper: () -> Unit,
-    viewModel: TeamViewModel = viewModel()
+    onInviteDeveloper: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -91,7 +91,7 @@ fun TeamMemberCard(member: ProjectMember) {
                 Text(
                     text = member.user?.name ?: "Unknown Developer",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = member.role.name.lowercase().replaceFirstChar { it.uppercase() },

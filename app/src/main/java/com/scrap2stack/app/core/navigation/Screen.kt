@@ -37,8 +37,9 @@ sealed class Screen(val route: String) {
     object DeveloperMatches : Screen("developer_matches/{projectId}") {
         fun createRoute(projectId: String) = "developer_matches/$projectId"
     }
-    object DeveloperProfile : Screen("developer_profile/{developerId}") {
-        fun createRoute(developerId: String) = "developer_profile/$developerId"
+    object DeveloperProfile : Screen("developer_profile/{developerId}?projectId={projectId}") {
+        fun createRoute(developerId: String, projectId: String = "") =
+            if (projectId.isNotBlank()) "developer_profile/$developerId?projectId=$projectId" else "developer_profile/$developerId"
     }
     object CollaborationRequest : Screen("collaboration_request/{projectId}/{developerId}") {
         fun createRoute(projectId: String, developerId: String) = "collaboration_request/$projectId/$developerId"

@@ -1,9 +1,12 @@
 package com.scrap2stack.app.domain.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class CharmContribution(
     val id: String,
     val userId: String,
-    val projectId: String?,
+    val projectId: String,
     val contributionType: ContributionType,
     val charms: Int,
     val description: String,
@@ -18,12 +21,4 @@ enum class ContributionType {
     PROJECT_CONTRIBUTION,
     PROJECT_REVIVED,
     PROJECT_SHIPPED
-}
-
-object CharmsRules {
-    const val TASK_COMPLETED = 10
-    const val TASK_HELPED = 5
-    const val PROJECT_CONTRIBUTION = 15
-    const val PROJECT_REVIVED = 50
-    const val PROJECT_SHIPPED = 100
 }

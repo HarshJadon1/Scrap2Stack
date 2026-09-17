@@ -2,7 +2,6 @@ package com.scrap2stack.app.feature.project
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scrap2stack.app.data.repository.ProjectRepositoryImpl
 import com.scrap2stack.app.domain.model.Project
 import com.scrap2stack.app.domain.model.ProjectStatus
 import com.scrap2stack.app.domain.repository.ProjectRepository
@@ -21,7 +20,7 @@ sealed class GitHubImportState {
 }
 
 class GitHubImportViewModel(
-    private val repository: ProjectRepository = ProjectRepositoryImpl()
+    private val repository: ProjectRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<GitHubImportState>(GitHubImportState.Idle)

@@ -32,6 +32,7 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var validationError by remember { mutableStateOf<String?>(null) }
     
     val authState by viewModel.authState.collectAsState()
 
@@ -77,7 +78,7 @@ fun RegisterScreen(
 
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = { name = it; validationError = null },
                 label = { Text("Full Name") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
@@ -89,7 +90,7 @@ fun RegisterScreen(
 
             OutlinedTextField(
                 value = username,
-                onValueChange = { username = it },
+                onValueChange = { username = it; validationError = null },
                 label = { Text("Username") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
@@ -101,7 +102,7 @@ fun RegisterScreen(
 
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it; validationError = null },
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
@@ -114,7 +115,7 @@ fun RegisterScreen(
 
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { password = it; validationError = null },
                 label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
@@ -136,7 +137,7 @@ fun RegisterScreen(
 
             OutlinedTextField(
                 value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                onValueChange = { confirmPassword = it; validationError = null },
                 label = { Text("Confirm Password") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
@@ -148,9 +149,10 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            if (authState is AuthState.Error) {
+            val displayError = validationError ?: (authState as? AuthState.Error)?.message
+            if (displayError != null) {
                 Text(
-                    text = (authState as AuthState.Error).message,
+                    text = displayError,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -161,8 +163,11 @@ fun RegisterScreen(
                 text = "Create Account",
                 onClick = {
                     if (password != confirmPassword) {
-                        // This should ideally be handled in ViewModel or a state
+                        validationError = "Passwords do not match"
+                    } else if (name.isBlank() || username.isBlank() || email.isBlank() || password.isBlank()) {
+                        validationError = "All fields are required"
                     } else {
+                        validationError = null
                         viewModel.register(name, username, email, password)
                     }
                 },

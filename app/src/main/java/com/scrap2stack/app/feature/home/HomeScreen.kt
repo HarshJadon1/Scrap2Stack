@@ -1,5 +1,6 @@
 package com.scrap2stack.app.feature.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -15,12 +16,12 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.*
@@ -34,6 +35,10 @@ fun HomeScreen(
     onNavigateToCharms: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadHomeData()
+    }
 
     Scaffold(
         topBar = {
@@ -93,7 +98,7 @@ private fun HomeContent(
             item {
                 SectionHeader(title = "Recommended For You")
             }
-            items(recommendedProjects) { project ->
+            items(recommendedProjects, key = { "rec_${it.id}" }) { project ->
                 RecommendedProjectCard(
                     project = project,
                     onClick = { onNavigateToProjectDetails(project.id) }
@@ -106,7 +111,7 @@ private fun HomeContent(
                 SectionHeader(title = "Projects You Can Revive")
             }
 
-            items(trendingProjects) { project ->
+            items(trendingProjects, key = { "trend_${it.id}" }) { project ->
                 ProjectCard(
                     project = project,
                     onClick = { onNavigateToProjectDetails(project.id) }
@@ -122,7 +127,7 @@ private fun HomeContent(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(trendingProjects.sortedByDescending { it.revivalScore }) { project ->
+                    items(trendingProjects.sortedByDescending { it.revivalScore }, key = { "compact_${it.id}" }) { project ->
                         CompactProjectCard(
                             project = project,
                             onClick = { onNavigateToProjectDetails(project.id) }
@@ -242,7 +247,7 @@ fun CompactProjectCard(
             .height(120.dp),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
         onClick = onClick
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.SpaceBetween) {

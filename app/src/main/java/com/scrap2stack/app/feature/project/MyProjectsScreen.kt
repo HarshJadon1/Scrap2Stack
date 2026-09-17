@@ -21,7 +21,11 @@ fun MyProjectsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Created", "Joined", "Completed")
+    val tabs = listOf("Created", "Joined", "Saved", "Completed")
+
+    LaunchedEffect(Unit) {
+        viewModel.loadMyProjects()
+    }
 
     Column(
         modifier = Modifier
@@ -30,10 +34,11 @@ fun MyProjectsScreen(
     ) {
         SectionHeader(title = "My Projects")
 
-        TabRow(
+        ScrollableTabRow(
             selectedTabIndex = selectedTab,
             containerColor = Color.Transparent,
-            divider = {}
+            divider = {},
+            edgePadding = 0.dp
         ) {
             tabs.forEachIndexed { index, title ->
                 Tab(
@@ -54,7 +59,8 @@ fun MyProjectsScreen(
                     val currentProjects = when (selectedTab) {
                         0 -> state.data.created
                         1 -> state.data.joined
-                        2 -> state.data.completed
+                        2 -> state.data.saved
+                        3 -> state.data.completed
                         else -> emptyList()
                     }
 
@@ -63,14 +69,16 @@ fun MyProjectsScreen(
                             message = when (selectedTab) {
                                 0 -> "You haven't created any projects yet."
                                 1 -> "You haven't joined any projects yet."
-                                2 -> "No completed projects found."
+                                2 -> "No saved projects yet. Tap the bookmark icon on any project details page to save it!"
+                                3 -> "No completed projects found."
                                 else -> "No projects found."
                             }
                         )
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(bottom = 24.dp)
                         ) {
                             items(currentProjects) { project ->
                                 ProjectCard(

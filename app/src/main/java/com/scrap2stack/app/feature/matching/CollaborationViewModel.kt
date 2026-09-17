@@ -3,7 +3,10 @@ package com.scrap2stack.app.feature.matching
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scrap2stack.app.domain.model.CollaborationRequest
+import com.scrap2stack.app.domain.repository.CollaborationRepository
 import com.scrap2stack.app.domain.usecase.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,7 +31,8 @@ class CollaborationViewModel(
     private val getSentRequestsUseCase: GetSentCollaborationRequestsUseCase,
     private val acceptRequestUseCase: AcceptCollaborationRequestUseCase,
     private val rejectRequestUseCase: RejectCollaborationRequestUseCase,
-    private val cancelRequestUseCase: CancelCollaborationRequestUseCase
+    private val cancelRequestUseCase: CancelCollaborationRequestUseCase,
+    private val repository: CollaborationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CollaborationUiState>(CollaborationUiState.Idle)
@@ -53,16 +57,29 @@ class CollaborationViewModel(
     fun loadRequests() {
         viewModelScope.launch {
             _requestsState.value = RequestsUiState.Loading
-            val receivedResult = getReceivedRequestsUseCase()
-            val sentResult = getSentRequestsUseCase()
+            try {
+                coroutineScope {
+                    val receivedDeferred = async { getReceivedRequestsUseCase() }
+                    val sentDeferred = async { getSentRequestsUseCase() }
 
-            if (receivedResult.isSuccess && sentResult.isSuccess) {
-                _requestsState.value = RequestsUiState.Success(
-                    received = receivedResult.getOrNull() ?: emptyList(),
-                    sent = sentResult.getOrNull() ?: emptyList()
-                )
-            } else {
+                    val receivedResult = receivedDeferred.await()
+                    val sentResult = sentDeferred.await()
+
+                    _requestsState.value = RequestsUiState.Success(
+                        received = receivedResult.getOrNull() ?: emptyList(),
+                        sent = sentResult.getOrNull() ?: emptyList()
+                    )
+                }
+            } catch (e: Exception) {
                 _requestsState.value = RequestsUiState.Error("Failed to load collaboration requests")
+            }
+        }
+    }
+
+    fun subscribeToRealtimeRequests(userId: String) {
+        viewModelScope.launch {
+            repository.observeCollaborationRequests(userId).collect {
+                loadRequests()
             }
         }
     }
