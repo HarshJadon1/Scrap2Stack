@@ -5,107 +5,72 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Top Stack Brick Structure (Dark Charcoal #1E1E2C) -->
-    <!-- Row 1: Top Bar -->
+    <!-- SCATTERED "SCRAP" FRAGMENTS (Bottom-Left Ascending Cluster) -->
+    <!-- Fragment 1: Small Emerald Diamond -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M48,16 h28 a2,2 0 0 1 2,2 v6 a2,2 0 0 1 -2,2 h-28 a2,2 0 0 1 -2,-2 v-6 a2,2 0 0 1 2,-2 Z" />
+        android:fillColor="#34D399"
+        android:pathData="M 20,76 L 24,72 L 28,76 L 24,80 Z" />
 
-    <!-- Row 2: Middle Bar -->
+    <!-- Fragment 2: Tiny Emerald Spark -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M48,28 h22 a2,2 0 0 1 2,2 v6 a2,2 0 0 1 -2,2 h-22 a2,2 0 0 1 -2,-2 v-6 a2,2 0 0 1 2,-2 Z" />
+        android:fillColor="#6EE7B7"
+        android:pathData="M 21,65 L 24,62 L 27,65 L 24,68 Z" />
 
-    <!-- Row 3: Left Dark Block -->
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M48,40 h10 a2,2 0 0 1 2,2 v6 a2,2 0 0 1 -2,2 h-10 a2,2 0 0 1 -2,-2 v-6 a2,2 0 0 1 2,-2 Z" />
-
-    <!-- Row 3: Bright Emerald Green Accent Block (#10B981) -->
+    <!-- Fragment 3: Floating Scrap Square -->
     <path
         android:fillColor="#10B981"
-        android:pathData="M62,40 h10 a2,2 0 0 1 2,2 v6 a2,2 0 0 1 -2,2 h-10 a2,2 0 0 1 -2,-2 v-6 a2,2 0 0 1 2,-2 Z" />
+        android:pathData="M 26,71 L 30,67 L 34,71 L 30,75 Z" />
 
-    <!-- Row 4: Bottom Bar -->
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M56,52 h18 a2,2 0 0 1 2,2 v6 a2,2 0 0 1 -2,2 h-18 a2,2 0 0 1 -2,-2 v-6 a2,2 0 0 1 2,-2 Z" />
+    <!-- "STACK" S-EMBLEM TIERS -->
 
-    <!-- Curved Funnel Stem connecting Stack to Scrap debris -->
+    <!-- 1. Bottom Pillar (Connecting Bottom to Middle on Left) -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M48,40 C 48,50 42,56 36,60 C 32,62 28,66 28,70 C 32,69 38,65 42,60 C 46,55 48,50 48,40 Z" />
+        android:fillColor="#059669"
+        android:pathData="M 28,47 L 38,47 A 4,4 0 0 1 42,51 L 42,65 A 4,4 0 0 1 38,69 L 28,69 A 4,4 0 0 1 24,65 L 24,51 A 4,4 0 0 1 28,47 Z" />
 
-    <!-- Shattered "Scrap" Fragments Dispersing (Lower Left Cluster) -->
+    <!-- 2. Bottom Tier Card (Scrap Foundation - Revival Emerald) -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M 32,56 h 4 v 4 h -4 Z" />
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M 26,60 h 5 v 5 h -5 Z" />
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M 22,66 h 4 v 4 h -4 Z" />
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M 28,68 h 5 v 5 h -5 Z" />
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M 24,74 h 3 v 3 h -3 Z" />
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M 32,74 h 4 v 4 h -4 Z" />
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M 28,77 h 3 v 3 h -3 Z" />
+        android:fillColor="#10B981"
+        android:pathData="M 36,55 L 72,55 A 5,5 0 0 1 77,60 L 77,64 A 5,5 0 0 1 72,69 L 36,69 A 5,5 0 0 1 31,64 L 31,60 A 5,5 0 0 1 36,55 Z" />
 
-    <!-- Brand Typography "ScrapToStack" at the Bottom -->
-    <!-- S -->
+    <!-- Bottom Tier Inner Highlight Line -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M16,88 c0,-1 1,-2 2,-2 h4 v1 h-4 v1 h4 c1,0 2,1 2,2 v1 c0,1 -1,2 -2,2 h-4 v-1 h4 v-1 h-4 c-1,0 -2,-1 -2,-2 Z" />
-    <!-- c -->
+        android:fillColor="#34D399"
+        android:pathData="M 38,57 L 70,57 A 1.5,1.5 0 0 1 71.5,58.5 L 71.5,58.5 A 1.5,1.5 0 0 1 70,60 L 38,60 A 1.5,1.5 0 0 1 36.5,58.5 L 36.5,58.5 A 1.5,1.5 0 0 1 38,57 Z" />
+
+    <!-- 3. Middle Tier Card (Transformation Bridge - Electric Blue / Teal) -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M27,89 c1,-1 2,-1 3,-1 h1 v1 h-1 c-1,0 -2,1 -2,2 v1 c0,1 1,2 2,2 h1 v1 h-1 c-1,0 -2,-1 -3,-2 Z" />
-    <!-- r -->
+        android:fillColor="#0EA5E9"
+        android:pathData="M 32,40 L 68,40 A 5,5 0 0 1 73,45 L 73,49 A 5,5 0 0 1 68,54 L 32,54 A 5,5 0 0 1 27,49 L 27,45 A 5,5 0 0 1 32,40 Z" />
+
+    <!-- Middle Tier Inner Highlight Line -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M33,88 h1 v1 c1,-1 2,-1 3,-1 v1 c-1,0 -2,1 -2,2 v3 h-2 Z" />
-    <!-- a -->
+        android:fillColor="#38BDF8"
+        android:pathData="M 34,42 L 66,42 A 1.5,1.5 0 0 1 67.5,43.5 L 67.5,43.5 A 1.5,1.5 0 0 1 66,45 L 34,45 A 1.5,1.5 0 0 1 32.5,43.5 L 32.5,43.5 A 1.5,1.5 0 0 1 34,42 Z" />
+
+    <!-- 4. Top Pillar (Connecting Middle to Top on Right) -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M39,90 c0,-1 1,-2 2,-2 h2 v5 h-1 v-1 c0,1 -1,1 -2,1 -1,0 -2,-1 -2,-2 Z M42,89 h-1 c-1,0 -1,1 -1,1 0,1 0,1 1,1 h1 Z" />
-    <!-- p -->
+        android:fillColor="#4F46E5"
+        android:pathData="M 66,32 L 76,32 A 4,4 0 0 1 80,36 L 80,50 A 4,4 0 0 1 76,54 L 66,54 A 4,4 0 0 1 62,50 L 62,36 A 4,4 0 0 1 66,32 Z" />
+
+    <!-- 5. Top Tier Card (Production Stack - Electric Indigo) -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M46,88 h1 v1 c0,-1 1,-1 2,-1 1,0 2,1 2,2 v1 c0,1 -1,2 -2,2 -1,0 -2,0 -2,-1 v3 h-1 Z M48,89 c-1,0 -1,1 -1,1 v1 c0,1 0,1 1,1 1,0 1,-1 1,-1 v-1 c0,-1 0,-1 -1,-1 Z" />
-    <!-- T -->
+        android:fillColor="#6366F1"
+        android:pathData="M 36,25 L 72,25 A 5,5 0 0 1 77,30 L 77,34 A 5,5 0 0 1 72,39 L 36,39 A 5,5 0 0 1 31,34 L 31,30 A 5,5 0 0 1 36,25 Z" />
+
+    <!-- Top Tier Inner Highlight Line -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M52,86 h5 v1 h-2 v6 h-1 v-6 h-2 Z" />
-    <!-- o -->
+        android:fillColor="#A5B4FC"
+        android:pathData="M 38,27 L 70,27 A 1.5,1.5 0 0 1 71.5,28.5 L 71.5,28.5 A 1.5,1.5 0 0 1 70,30 L 38,30 A 1.5,1.5 0 0 1 36.5,28.5 L 36.5,28.5 A 1.5,1.5 0 0 1 38,27 Z" />
+
+    <!-- PRODUCTION "STACK" SPARK (Top-Right Sparkle) -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M58,90 c0,-1 1,-2 2,-2 1,0 2,1 2,2 v1 c0,1 -1,2 -2,2 -1,0 -2,-1 -2,-2 Z M59,90 c0,1 0,1 1,1 1,0 1,0 1,-1 v-1 c0,-1 0,-1 -1,-1 -1,0 -1,0 -1,1 Z" />
-    <!-- S -->
+        android:fillColor="#FFFFFF"
+        android:pathData="M 81,15 Q 81,22 88,22 Q 81,22 81,29 Q 81,22 74,22 Q 81,22 81,15 Z" />
+
+    <!-- Small Accent Sparkle -->
     <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M64,88 c0,-1 1,-2 2,-2 h4 v1 h-4 v1 h4 c1,0 2,1 2,2 v1 c0,1 -1,2 -2,2 h-4 v-1 h4 v-1 h-4 c-1,0 -2,-1 -2,-2 Z" />
-    <!-- t -->
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M73,86 h1 v2 h2 v1 h-2 v3 c0,1 0,1 1,1 h1 v1 h-2 c-1,0 -1,-1 -1,-2 Z" />
-    <!-- a -->
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M78,90 c0,-1 1,-2 2,-2 h2 v5 h-1 v-1 c0,1 -1,1 -2,1 -1,0 -2,-1 -2,-2 Z M81,89 h-1 c-1,0 -1,1 -1,1 0,1 0,1 1,1 h1 Z" />
-    <!-- c -->
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M84,89 c1,-1 2,-1 3,-1 h1 v1 h-1 c-1,0 -2,1 -2,2 v1 c0,1 1,2 2,2 h1 v1 h-1 c-1,0 -2,-1 -3,-2 Z" />
-    <!-- k -->
-    <path
-        android:fillColor="#1E1E2C"
-        android:pathData="M89,86 h1 v3 l2,-3 h2 l-2,3 2,4 h-2 l-2,-3 v3 h-1 Z" />
+        android:fillColor="#A5B4FC"
+        android:pathData="M 87,27 Q 87,30 90,30 Q 87,30 87,33 Q 87,30 84,30 Q 87,30 87,27 Z" />
+
 </vector>
