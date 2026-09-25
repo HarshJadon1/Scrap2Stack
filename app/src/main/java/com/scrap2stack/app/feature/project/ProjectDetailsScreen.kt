@@ -11,7 +11,10 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
@@ -26,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.domain.model.Project
 import com.scrap2stack.app.domain.model.ProjectAnalysis
+import com.scrap2stack.app.domain.model.ProjectStatus
 import com.scrap2stack.app.domain.service.ScrapAIEngine
 import com.scrap2stack.app.ui.theme.StatusAbandoned
 import com.scrap2stack.app.ui.theme.StatusCompleted
@@ -44,12 +48,53 @@ fun ProjectDetailsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val analysisState by viewModel.analysisState.collectAsState()
 
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+
     LaunchedEffect(projectId) {
         viewModel.loadProjectDetails(projectId)
         viewModel.loadProjectAnalysis(projectId)
     }
 
-    val isSaved = (uiState as? ProjectDetailsState.Success)?.isSaved ?: false
+    val successState = uiState as? ProjectDetailsState.Success
+    val isSaved = successState?.isSaved ?: false
+    val isOwner = successState?.isOwner ?: false
+
+    if (showDeleteDialog && successState != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Project?") },
+            text = { Text("Are you sure you want to delete '${successState.project.name}'? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteProject(projectId)
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showEditDialog && successState != null) {
+        EditProjectDialog(
+            project = successState.project,
+            onDismiss = { showEditDialog = false },
+            onConfirm = { updatedProject ->
+                showEditDialog = false
+                viewModel.updateProject(updatedProject)
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -61,13 +106,42 @@ fun ProjectDetailsScreen(
                     }
                 },
                 actions = {
-                    if (uiState is ProjectDetailsState.Success) {
+                    if (successState != null) {
                         IconButton(onClick = { viewModel.toggleSave(projectId) }) {
                             Icon(
                                 imageVector = if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                                 contentDescription = if (isSaved) "Unsave Project" else "Save Project",
                                 tint = if (isSaved) MaterialTheme.colorScheme.primary else LocalContentColor.current
                             )
+                        }
+
+                        if (isOwner) {
+                            Box {
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "More Options")
+                                }
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Edit Project") },
+                                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            showEditDialog = true
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Delete Project", color = MaterialTheme.colorScheme.error) },
+                                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                        onClick = {
+                                            showMenu = false
+                                            showDeleteDialog = true
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -320,4 +394,134 @@ fun AIInsightsSection(analysis: ProjectAnalysis) {
             }
         }
     }
+}
+
+@Composable
+fun EditProjectDialog(
+    project: Project,
+    onDismiss: () -> Unit,
+    onConfirm: (Project) -> Unit
+) {
+    var name by remember { mutableStateOf(project.name) }
+    var description by remember { mutableStateOf(project.description) }
+    var problem by remember { mutableStateOf(project.problem) }
+    var category by remember { mutableStateOf(project.category) }
+    var technologies by remember { mutableStateOf(project.technologies.joinToString(", ")) }
+    var skills by remember { mutableStateOf(project.requiredSkills.joinToString(", ")) }
+    var status by remember { mutableStateOf(project.status) }
+    var githubUrl by remember { mutableStateOf(project.githubUrl) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Project", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Project Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Short Description") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
+                )
+
+                OutlinedTextField(
+                    value = problem,
+                    onValueChange = { problem = it },
+                    label = { Text("Why was it abandoned?") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
+                )
+
+                OutlinedTextField(
+                    value = technologies,
+                    onValueChange = { technologies = it },
+                    label = { Text("Technologies (Comma separated)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = skills,
+                    onValueChange = { skills = it },
+                    label = { Text("Required Skills (Comma separated)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text("Category", style = MaterialTheme.typography.titleSmall)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("Web", "Mobile", "AI/ML", "DevOps").forEach { cat ->
+                        FilterChip(
+                            selected = category == cat,
+                            onClick = { category = cat },
+                            label = { Text(cat, style = MaterialTheme.typography.bodySmall) }
+                        )
+                    }
+                }
+
+                Text("Project Status", style = MaterialTheme.typography.titleSmall)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    ProjectStatus.entries.forEach { st ->
+                        FilterChip(
+                            selected = status == st,
+                            onClick = { status = st },
+                            label = { Text(st.name, style = MaterialTheme.typography.bodySmall) }
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = githubUrl,
+                    onValueChange = { githubUrl = it },
+                    label = { Text("GitHub URL") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val techList = technologies.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                    val skillList = skills.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                    val updated = project.copy(
+                        name = name.ifBlank { project.name },
+                        description = description,
+                        problem = problem,
+                        category = category,
+                        technologies = techList,
+                        requiredSkills = skillList,
+                        status = status,
+                        githubUrl = githubUrl
+                    )
+                    onConfirm(updated)
+                },
+                enabled = name.isNotBlank()
+            ) {
+                Text("Save Changes")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

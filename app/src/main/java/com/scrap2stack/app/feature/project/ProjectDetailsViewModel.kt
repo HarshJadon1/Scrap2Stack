@@ -107,4 +107,18 @@ class ProjectDetailsViewModel(
                 }
         }
     }
+
+    fun updateProject(updatedProject: Project) {
+        viewModelScope.launch {
+            val currentState = _uiState.value as? ProjectDetailsState.Success ?: return@launch
+            _uiState.value = ProjectDetailsState.Loading
+            repository.updateProject(updatedProject)
+                .onSuccess { newProject ->
+                    _uiState.value = currentState.copy(project = newProject)
+                }
+                .onFailure { error ->
+                    _uiState.value = ProjectDetailsState.Error(error.message ?: "Failed to update project")
+                }
+        }
+    }
 }
