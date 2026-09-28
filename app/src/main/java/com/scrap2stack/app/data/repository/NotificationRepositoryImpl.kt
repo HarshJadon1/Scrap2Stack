@@ -1,6 +1,8 @@
 package com.scrap2stack.app.data.repository
 
 import com.scrap2stack.app.core.network.supabase
+import com.scrap2stack.app.data.local.cache.AppCache
+import com.scrap2stack.app.data.mapper.*
 import com.scrap2stack.app.data.remote.dto.NotificationDto
 import com.scrap2stack.app.domain.model.NotificationItem
 import com.scrap2stack.app.domain.repository.NotificationRepository
@@ -28,9 +30,16 @@ class NotificationRepositoryImpl : NotificationRepository {
                 }
                 .decodeList<NotificationDto>()
 
-            Result.success(notifications.map { it.toDomain() })
+            val items = notifications.map { it.toDomain() }
+            AppCache.saveNotifications(items)
+            Result.success(items)
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = AppCache.getNotifications()
+            if (cached.isNotEmpty()) {
+                Result.success(cached)
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
@@ -40,6 +49,7 @@ class NotificationRepositoryImpl : NotificationRepository {
                 .update(buildJsonObject { put("read", true) }) {
                     filter { eq("id", notificationId) }
                 }
+            AppCache.markNotificationAsRead(notificationId)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -55,22 +65,11 @@ class NotificationRepositoryImpl : NotificationRepository {
                 .update(buildJsonObject { put("read", true) }) {
                     filter { eq("user_id", userId) }
                 }
+            val current = AppCache.getNotifications().map { it.copy(read = true) }
+            AppCache.saveNotifications(current)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    private fun NotificationDto.toDomain(): NotificationItem {
-        return NotificationItem(
-            id = id,
-            userId = userId,
-            title = title,
-            content = content,
-            type = type,
-            read = read,
-            referenceId = referenceId,
-            createdAt = createdAt
-        )
     }
 }

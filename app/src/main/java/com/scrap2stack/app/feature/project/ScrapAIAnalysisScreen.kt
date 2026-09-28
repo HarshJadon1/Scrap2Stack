@@ -32,7 +32,8 @@ fun ScrapAIAnalysisScreen(
     projectId: String,
     viewModel: ScrapAIAnalysisViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToRevivalScore: () -> Unit
+    onNavigateToRevivalScore: () -> Unit,
+    onNavigateToWorkspace: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -67,7 +68,8 @@ fun ScrapAIAnalysisScreen(
                 ScrapAIAnalysisContent(
                     analysis = state.analysis,
                     innerPadding = innerPadding,
-                    onNavigateToRevivalScore = onNavigateToRevivalScore
+                    onNavigateToRevivalScore = onNavigateToRevivalScore,
+                    onNavigateToWorkspace = onNavigateToWorkspace
                 )
             }
         }
@@ -78,7 +80,8 @@ fun ScrapAIAnalysisScreen(
 private fun ScrapAIAnalysisContent(
     analysis: ProjectAnalysis,
     innerPadding: PaddingValues,
-    onNavigateToRevivalScore: () -> Unit
+    onNavigateToRevivalScore: () -> Unit,
+    onNavigateToWorkspace: (String) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -173,7 +176,14 @@ private fun ScrapAIAnalysisContent(
         }
 
         Scrap2StackButton(
-            text = "View Revival Strategy",
+            text = "🚀 Adopt Plan & Launch Workspace",
+            onClick = { onNavigateToWorkspace(analysis.projectId) }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Scrap2StackOutlinedButton(
+            text = "📊 View Strategy & Match Teammates",
             onClick = onNavigateToRevivalScore
         )
 

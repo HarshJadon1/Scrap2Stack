@@ -78,6 +78,7 @@ class AuthRepositoryImpl(
         try {
             supabase.auth.signOut()
             sessionManager.clearSession()
+            com.scrap2stack.app.data.local.cache.AppCache.clearAll()
         } catch (e: Exception) {
             // Log error
         }

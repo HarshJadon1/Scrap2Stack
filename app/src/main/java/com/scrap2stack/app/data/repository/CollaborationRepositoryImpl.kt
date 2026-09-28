@@ -1,6 +1,8 @@
 package com.scrap2stack.app.data.repository
 
 import com.scrap2stack.app.core.network.supabase
+import com.scrap2stack.app.core.network.toUserFriendlyMessage
+import com.scrap2stack.app.data.mapper.*
 import com.scrap2stack.app.data.remote.dto.*
 import com.scrap2stack.app.domain.model.*
 import com.scrap2stack.app.domain.repository.CollaborationRepository
@@ -36,6 +38,39 @@ class CollaborationRepositoryImpl : CollaborationRepository {
                 return@withContext Result.failure(Exception("Recipient developer ID is required."))
             }
 
+            if (senderId == receiverId) {
+                return@withContext Result.failure(Exception("You cannot invite yourself to collaborate on your own project."))
+            }
+
+            // Pre-check if a pending or accepted invitation already exists
+            val existingRequests = try {
+                supabase.from("collaboration_requests")
+                    .select {
+                        filter {
+                            eq("project_id", projectId)
+                            eq("sender_id", senderId)
+                            eq("receiver_id", receiverId)
+                        }
+                    }
+                    .decodeList<CollaborationRequestDto>()
+            } catch (_: Exception) {
+                emptyList()
+            }
+
+            val pending = existingRequests.firstOrNull { it.status.equals("PENDING", ignoreCase = true) }
+            if (pending != null) {
+                return@withContext Result.failure(
+                    Exception("A collaboration invitation is already pending for this developer on this project.")
+                )
+            }
+
+            val accepted = existingRequests.firstOrNull { it.status.equals("ACCEPTED", ignoreCase = true) }
+            if (accepted != null) {
+                return@withContext Result.failure(
+                    Exception("This developer is already a member of this project.")
+                )
+            }
+
             val requestPayload = buildJsonObject {
                 put("project_id", projectId)
                 put("sender_id", senderId)
@@ -54,7 +89,8 @@ class CollaborationRepositoryImpl : CollaborationRepository {
             val enrichedList = enrichRequests(listOf(createdDto))
             Result.success(enrichedList.firstOrNull() ?: createdDto.toDomain())
         } catch (e: Exception) {
-            Result.failure(Exception("Failed to send invitation: ${e.localizedMessage}"))
+            val friendlyMsg = e.toUserFriendlyMessage("Failed to send invitation. Please try again.")
+            Result.failure(Exception(friendlyMsg))
         }
     }
 
@@ -99,80 +135,127 @@ class CollaborationRepositoryImpl : CollaborationRepository {
     }
 
     override suspend fun acceptRequest(requestId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        // 1. Try official Supabase SECURITY DEFINER RPC: respond_to_collaboration(req_id, response_status)
         try {
-            // Update request status to ACCEPTED
-            supabase.from("collaboration_requests")
-                .update(buildJsonObject { put("status", "ACCEPTED") }) {
-                    filter { eq("id", requestId) }
+            supabase.postgrest.rpc(
+                "respond_to_collaboration",
+                buildJsonObject {
+                    put("req_id", requestId)
+                    put("response_status", "ACCEPTED")
                 }
-
-            // Retrieve request to find project and member IDs
-            val req = supabase.from("collaboration_requests")
-                .select { filter { eq("id", requestId) } }
-                .decodeSingleOrNull<CollaborationRequestDto>()
-
-            if (req != null) {
-                // Fetch project to identify owner
-                val project = supabase.from("projects")
-                    .select { filter { eq("id", req.projectId) } }
-                    .decodeSingleOrNull<ProjectDto>()
-
-                // Correctly determine the member to add to project_members:
-                // If sender was project owner -> member is receiver.
-                // If sender was developer -> member is sender.
-                val newMemberUserId = if (project != null && req.senderId == project.ownerId) {
-                    req.receiverId
-                } else {
-                    req.senderId
-                }
-
-                val roleStr = req.proposedRole.ifBlank { "CONTRIBUTOR" }.lowercase()
-
-                supabase.from("project_members")
-                    .upsert(buildJsonObject {
-                        put("project_id", req.projectId)
-                        put("user_id", newMemberUserId)
-                        put("role", roleStr)
-                    })
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            // Attempt RPC procedure as secondary option
+            )
+            return@withContext Result.success(Unit)
+        } catch (rpcEx1: Exception) {
+            // Try lowercase if database enum requires "accepted"
             try {
                 supabase.postgrest.rpc(
-                    "accept_collaboration_request",
+                    "respond_to_collaboration",
                     buildJsonObject {
-                        put("p_request_id", requestId)
+                        put("req_id", requestId)
+                        put("response_status", "accepted")
                     }
                 )
+                return@withContext Result.success(Unit)
+            } catch (_: Exception) {}
+
+            // 2. Direct table fallback if RPC fails or is restricted
+            try {
+                supabase.from("collaboration_requests")
+                    .update(buildJsonObject { put("status", "ACCEPTED") }) {
+                        filter { eq("id", requestId) }
+                    }
+
+                val req = supabase.from("collaboration_requests")
+                    .select { filter { eq("id", requestId) } }
+                    .decodeSingleOrNull<CollaborationRequestDto>()
+
+                if (req != null) {
+                    val project = supabase.from("projects")
+                        .select { filter { eq("id", req.projectId) } }
+                        .decodeSingleOrNull<ProjectDto>()
+
+                    val newMemberUserId = if (project != null && req.senderId == project.ownerId) {
+                        req.receiverId
+                    } else {
+                        req.senderId
+                    }
+
+                    val roleStr = req.proposedRole?.ifBlank { "CONTRIBUTOR" }?.lowercase() ?: "contributor"
+
+                    try {
+                        supabase.from("project_members")
+                            .insert(buildJsonObject {
+                                put("project_id", req.projectId)
+                                put("user_id", newMemberUserId)
+                                put("role", roleStr)
+                            })
+                    } catch (_: Exception) {}
+                }
                 Result.success(Unit)
-            } catch (rpcEx: Exception) {
-                Result.failure(Exception("Failed to accept request: ${e.localizedMessage}"))
+            } catch (fallbackErr: Exception) {
+                val err = rpcEx1 ?: fallbackErr
+                Result.failure(Exception(err.toUserFriendlyMessage("Failed to accept invitation.")))
             }
         }
     }
 
     override suspend fun rejectRequest(requestId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        // 1. Try official Supabase RPC: respond_to_collaboration(req_id, response_status)
         try {
-            supabase.from("collaboration_requests")
-                .update(buildJsonObject { put("status", "REJECTED") }) {
-                    filter { eq("id", requestId) }
+            supabase.postgrest.rpc(
+                "respond_to_collaboration",
+                buildJsonObject {
+                    put("req_id", requestId)
+                    put("response_status", "REJECTED")
                 }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+            )
+            return@withContext Result.success(Unit)
+        } catch (rpcEx1: Exception) {
+            try {
+                supabase.postgrest.rpc(
+                    "respond_to_collaboration",
+                    buildJsonObject {
+                        put("req_id", requestId)
+                        put("response_status", "rejected")
+                    }
+                )
+                return@withContext Result.success(Unit)
+            } catch (_: Exception) {}
+
+            // 2. Direct table fallback
+            try {
+                supabase.from("collaboration_requests")
+                    .update(buildJsonObject { put("status", "REJECTED") }) {
+                        filter { eq("id", requestId) }
+                    }
+                Result.success(Unit)
+            } catch (fallbackErr: Exception) {
+                val err = rpcEx1 ?: fallbackErr
+                Result.failure(Exception(err.toUserFriendlyMessage("Failed to reject invitation.")))
+            }
         }
     }
 
     override suspend fun cancelRequest(requestId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            supabase.from("collaboration_requests")
-                .update(buildJsonObject { put("status", "CANCELLED") }) {
-                    filter { eq("id", requestId) }
+            supabase.postgrest.rpc(
+                "respond_to_collaboration",
+                buildJsonObject {
+                    put("req_id", requestId)
+                    put("response_status", "CANCELLED")
                 }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+            )
+            return@withContext Result.success(Unit)
+        } catch (_: Exception) {
+            try {
+                supabase.from("collaboration_requests")
+                    .update(buildJsonObject { put("status", "CANCELLED") }) {
+                        filter { eq("id", requestId) }
+                    }
+                Result.success(Unit)
+            } catch (fallbackErr: Exception) {
+                Result.failure(Exception(fallbackErr.toUserFriendlyMessage("Failed to cancel invitation.")))
+            }
         }
     }
 
@@ -241,61 +324,5 @@ class CollaborationRepositoryImpl : CollaborationRepository {
             )
         }
     }
-
-    private fun CollaborationRequestDto.toDomain(): CollaborationRequest {
-        return CollaborationRequest(
-            id = id,
-            projectId = projectId,
-            senderId = senderId,
-            receiverId = receiverId,
-            proposedRole = proposedRole,
-            message = message,
-            status = try { CollaborationStatus.valueOf(status.uppercase()) } catch (e: Exception) { CollaborationStatus.PENDING },
-            createdAt = createdAt,
-            project = project?.toDomain(),
-            sender = sender?.toDomain(),
-            receiver = receiver?.toDomain()
-        )
-    }
-
-    private fun ProjectDto.toDomain(): Project {
-        return Project(
-            id = id,
-            ownerId = ownerId,
-            name = name,
-            description = description,
-            technologies = technologies,
-            requiredSkills = requiredSkills,
-            status = try { ProjectStatus.valueOf(status.uppercase()) } catch (e: Exception) { ProjectStatus.INACTIVE },
-            revivalScore = revivalScore,
-            lastActivity = updatedAt,
-            teamSize = teamSize,
-            problem = problem ?: "",
-            category = category ?: "",
-            githubUrl = githubUrl ?: ""
-        )
-    }
-
-    private fun UserDto.toDomain(): Developer {
-        return Developer(
-            id = id,
-            name = name,
-            username = username,
-            bio = bio ?: "",
-            profileImageUrl = profileImage,
-            skills = skills,
-            interests = interests,
-            experienceLevel = try {
-                ExperienceLevel.valueOf(experienceLevel?.uppercase() ?: "BEGINNER")
-            } catch (e: Exception) {
-                ExperienceLevel.BEGINNER
-            },
-            githubUrl = githubUrl ?: "",
-            linkedinUrl = linkedinUrl ?: "",
-            portfolioUrl = portfolioUrl ?: "",
-            charms = charms,
-            createdAt = createdAt ?: "",
-            updatedAt = updatedAt ?: ""
-        )
-    }
 }
+

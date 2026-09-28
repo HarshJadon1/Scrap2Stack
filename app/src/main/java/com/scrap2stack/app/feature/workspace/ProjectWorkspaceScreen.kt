@@ -34,6 +34,7 @@ fun ProjectWorkspaceScreen(
     onNavigateToMatches: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isGeneratingRoadmap by viewModel.isGeneratingRoadmap.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     
     val tabs = listOf(
@@ -85,10 +86,16 @@ fun ProjectWorkspaceScreen(
                 is WorkspaceState.Success -> {
                     when (selectedTab) {
                         0 -> WorkspaceDashboard(
+                            project = state.project,
+                            tasks = state.tasks,
                             tasksCount = state.tasks.size,
                             completedTasksCount = state.tasks.count { it.status.name == "COMPLETED" },
                             membersCount = state.members.size,
-                            onNavigateToMatches = onNavigateToMatches
+                            isShipped = state.isShipped,
+                            onNavigateToMatches = onNavigateToMatches,
+                            onShipProject = {
+                                viewModel.shipProject(projectId)
+                            }
                         )
                         1 -> TasksScreen(
                             projectId = projectId,
@@ -102,11 +109,22 @@ fun ProjectWorkspaceScreen(
                         )
                         2 -> RoadmapScreen(
                             projectId = projectId,
-                            roadmapItems = state.roadmapItems
+                            roadmapItems = state.roadmapItems,
+                            isGenerating = isGeneratingRoadmap,
+                            onGenerateRoadmap = {
+                                viewModel.generateAiRoadmap(projectId = projectId)
+                            },
+                            onStatusChange = { itemId, newStatus ->
+                                viewModel.updateRoadmapStatus(itemId, newStatus, projectId)
+                            },
+                            onConvertPhaseToTasks = { phaseItem ->
+                                viewModel.convertRoadmapPhaseToTasks(phaseItem, projectId)
+                            }
                         )
                         3 -> ChatView(projectId = projectId)
                         4 -> GithubActivityScreen(
-                            projectId = projectId
+                            projectId = projectId,
+                            repoUrl = state.project?.githubUrl?.ifBlank { null } ?: "https://github.com/Scrap2Stack/revival-engine"
                         )
                         5 -> TeamView(projectId = projectId, onInviteDeveloper = onNavigateToMatches)
                     }

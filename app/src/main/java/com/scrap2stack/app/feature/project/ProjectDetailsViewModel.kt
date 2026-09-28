@@ -8,6 +8,7 @@ import com.scrap2stack.app.domain.repository.ProjectRepository
 import com.scrap2stack.app.domain.repository.UserRepository
 import com.scrap2stack.app.domain.usecase.DeleteProjectUseCase
 import com.scrap2stack.app.domain.usecase.GetProjectDetailsUseCase
+import com.scrap2stack.app.domain.usecase.UpdateProjectUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +30,7 @@ sealed class ProjectAnalysisState {
 class ProjectDetailsViewModel(
     private val getProjectDetailsUseCase: GetProjectDetailsUseCase,
     private val deleteProjectUseCase: DeleteProjectUseCase,
+    private val updateProjectUseCase: UpdateProjectUseCase,
     private val repository: ProjectRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
@@ -112,7 +114,7 @@ class ProjectDetailsViewModel(
         viewModelScope.launch {
             val currentState = _uiState.value as? ProjectDetailsState.Success ?: return@launch
             _uiState.value = ProjectDetailsState.Loading
-            repository.updateProject(updatedProject)
+            updateProjectUseCase(updatedProject)
                 .onSuccess { newProject ->
                     _uiState.value = currentState.copy(project = newProject)
                 }

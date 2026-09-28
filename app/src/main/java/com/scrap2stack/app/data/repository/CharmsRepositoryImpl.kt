@@ -1,6 +1,7 @@
 package com.scrap2stack.app.data.repository
 
 import com.scrap2stack.app.core.network.supabase
+import com.scrap2stack.app.data.mapper.*
 import com.scrap2stack.app.data.remote.dto.CharmContributionDto
 import com.scrap2stack.app.domain.model.CharmContribution
 import com.scrap2stack.app.domain.model.ContributionType
@@ -140,30 +141,5 @@ class CharmsRepositoryImpl : CharmsRepository {
             Result.failure(e)
         }
     }
-
-    /**
-     * Maps a [CharmContributionDto] remote data transfer object to its domain representation [CharmContribution].
-     *
-     * Handles safe parsing of [ContributionType] enum strings, falling back to
-     * [ContributionType.PROJECT_CONTRIBUTION] if parsing fails.
-     *
-     * @return The mapped [CharmContribution] domain object.
-     */
-    private fun CharmContributionDto.toDomain(): CharmContribution {
-        return CharmContribution(
-            id = id,
-            userId = userId,
-            projectId = projectId ?: "",
-            contributionType = try {
-                ContributionType.valueOf(contributionType.uppercase())
-            } catch (e: Exception) {
-                ContributionType.PROJECT_CONTRIBUTION
-            },
-            charms = charms,
-            description = description,
-            referenceId = referenceId,
-            createdAt = createdAt,
-            projectName = project?.name
-        )
-    }
 }
+

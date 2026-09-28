@@ -6,10 +6,12 @@ import com.scrap2stack.app.domain.repository.ProjectRepository
 import com.scrap2stack.app.domain.repository.UserRepository
 import com.scrap2stack.app.domain.usecase.DeleteProjectUseCase
 import com.scrap2stack.app.domain.usecase.GetProjectDetailsUseCase
+import com.scrap2stack.app.domain.usecase.UpdateProjectUseCase
 
 class ProjectDetailsViewModelFactory(
     private val getProjectDetailsUseCase: GetProjectDetailsUseCase,
     private val deleteProjectUseCase: DeleteProjectUseCase,
+    private val updateProjectUseCase: UpdateProjectUseCase,
     private val repository: ProjectRepository,
     private val userRepository: UserRepository
 ) : ViewModelProvider.Factory {
@@ -19,6 +21,7 @@ class ProjectDetailsViewModelFactory(
             return ProjectDetailsViewModel(
                 getProjectDetailsUseCase,
                 deleteProjectUseCase,
+                updateProjectUseCase,
                 repository,
                 userRepository
             ) as T

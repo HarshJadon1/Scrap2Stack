@@ -13,13 +13,13 @@ data class CollaborationRequestDto(
     @SerialName("receiver_id")
     val receiverId: String,
     @SerialName("proposed_role")
-    val proposedRole: String = "CONTRIBUTOR",
-    val message: String,
+    val proposedRole: String? = "CONTRIBUTOR",
+    val message: String? = "",
     val status: String = "PENDING",
     @SerialName("created_at")
-    val createdAt: String = "",
+    val createdAt: String? = null,
     @SerialName("updated_at")
-    val updatedAt: String = "",
+    val updatedAt: String? = null,
     val project: ProjectDto? = null,
     val sender: UserDto? = null,
     val receiver: UserDto? = null

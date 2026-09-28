@@ -1,11 +1,13 @@
 package com.scrap2stack.app.data.repository
 
 import com.scrap2stack.app.core.network.supabase
+import com.scrap2stack.app.core.network.toUserFriendlyMessage
+import com.scrap2stack.app.data.local.cache.AppCache
+import com.scrap2stack.app.data.mapper.*
 import com.scrap2stack.app.data.remote.dto.ProfileUpdateRequest
 import com.scrap2stack.app.data.remote.dto.ProfileUpsertRequest
 import com.scrap2stack.app.data.remote.dto.UserDto
 import com.scrap2stack.app.domain.model.Developer
-import com.scrap2stack.app.domain.model.ExperienceLevel
 import com.scrap2stack.app.domain.repository.UserRepository
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
@@ -32,20 +34,26 @@ class UserRepositoryImpl : UserRepository {
                 }
                 .decodeSingleOrNull<UserDto>()
 
-            if (dto == null) {
-                Result.success(
-                    Developer(
-                        id = userId,
-                        name = defaultName,
-                        username = defaultUsername,
-                        bio = ""
-                    )
+            val profile = if (dto == null) {
+                Developer(
+                    id = userId,
+                    name = defaultName,
+                    username = defaultUsername,
+                    bio = ""
                 )
             } else {
-                Result.success(dto.toDomain())
+                dto.toDomain()
             }
+            AppCache.saveUser(profile)
+            Result.success(profile)
         } catch (e: Exception) {
-            Result.failure(e)
+            val session = supabase.auth.currentSessionOrNull()
+            val cached = session?.user?.id?.let { AppCache.getUser(it) }
+            if (cached != null) {
+                Result.success(cached)
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
@@ -77,12 +85,14 @@ class UserRepositoryImpl : UserRepository {
             val updatedDto = try {
                 supabase.from("profiles")
                     .update(updateRequest) {
-                        filter { eq("id", userId) }
+                        filter {
+                            eq("id", userId)
+                        }
                         select()
                     }
                     .decodeSingle<UserDto>()
             } catch (e: Exception) {
-                // Fallback to UPSERT if row does not exist in profiles yet
+                // If update returned 0 rows, use upsert
                 val upsertRequest = ProfileUpsertRequest(
                     id = userId,
                     name = name,
@@ -103,9 +113,11 @@ class UserRepositoryImpl : UserRepository {
                     .decodeSingle<UserDto>()
             }
 
-            Result.success(updatedDto.toDomain())
+            val saved = updatedDto.toDomain()
+            AppCache.saveUser(saved)
+            Result.success(saved)
         } catch (e: Exception) {
-            Result.failure(Exception("Failed to save profile: ${e.localizedMessage}"))
+            Result.failure(Exception(e.toUserFriendlyMessage("Failed to save profile.")))
         }
     }
 
@@ -123,7 +135,9 @@ class UserRepositoryImpl : UserRepository {
                 }
                 .decodeList<UserDto>()
             
-            Result.success(dtos.map { it.toDomain() })
+            val developers = dtos.map { it.toDomain() }
+            developers.forEach { AppCache.saveUser(it) }
+            Result.success(developers)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -138,32 +152,16 @@ class UserRepositoryImpl : UserRepository {
                     }
                 }
                 .decodeSingle<UserDto>()
-            Result.success(dto.toDomain())
+            val developer = dto.toDomain()
+            AppCache.saveUser(developer)
+            Result.success(developer)
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = AppCache.getUser(id)
+            if (cached != null) {
+                Result.success(cached)
+            } else {
+                Result.failure(e)
+            }
         }
-    }
-
-    private fun UserDto.toDomain(): Developer {
-        return Developer(
-            id = id,
-            name = name,
-            username = username,
-            bio = bio ?: "",
-            profileImageUrl = profileImage,
-            skills = skills,
-            interests = interests,
-            experienceLevel = try {
-                ExperienceLevel.valueOf(experienceLevel?.uppercase() ?: "BEGINNER")
-            } catch (e: Exception) {
-                ExperienceLevel.BEGINNER
-            },
-            githubUrl = githubUrl ?: "",
-            linkedinUrl = linkedinUrl ?: "",
-            portfolioUrl = portfolioUrl ?: "",
-            charms = charms,
-            createdAt = createdAt ?: "",
-            updatedAt = updatedAt ?: ""
-        )
     }
 }

@@ -1,10 +1,12 @@
 package com.scrap2stack.app.feature.matching
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -14,9 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.domain.model.DeveloperMatch
+import com.scrap2stack.app.domain.service.ContributionVerificationEngine
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,7 +29,8 @@ fun DeveloperMatchingScreen(
     viewModel: DeveloperMatchingViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToDeveloperProfile: (String) -> Unit,
-    onNavigateToRequestCollaboration: (String) -> Unit
+    onNavigateToRequestCollaboration: (String) -> Unit,
+    onNavigateToWorkspace: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -50,11 +55,28 @@ fun DeveloperMatchingScreen(
                 LoadingView(modifier = Modifier.padding(innerPadding))
             }
             is MatchingUiState.Empty -> {
-                EmptyStateView(
-                    title = "No matches found",
-                    description = "Try adding more project skills or wait for more developers to join.",
-                    modifier = Modifier.padding(innerPadding)
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    EmptyStateView(
+                        title = "No matches found",
+                        description = "Try adding more project skills or wait for more developers to join.",
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { onNavigateToWorkspace(projectId) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("🚀 Launch Project Workspace", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
             is MatchingUiState.Error -> {
                 ErrorView(
@@ -65,10 +87,12 @@ fun DeveloperMatchingScreen(
             }
             is MatchingUiState.Success -> {
                 MatchingList(
+                    projectId = projectId,
                     matches = state.matches,
                     innerPadding = innerPadding,
                     onNavigateToDeveloperProfile = onNavigateToDeveloperProfile,
-                    onNavigateToRequestCollaboration = onNavigateToRequestCollaboration
+                    onNavigateToRequestCollaboration = onNavigateToRequestCollaboration,
+                    onNavigateToWorkspace = onNavigateToWorkspace
                 )
             }
             else -> {}
@@ -78,10 +102,12 @@ fun DeveloperMatchingScreen(
 
 @Composable
 private fun MatchingList(
+    projectId: String,
     matches: List<DeveloperMatch>,
     innerPadding: PaddingValues,
     onNavigateToDeveloperProfile: (String) -> Unit,
-    onNavigateToRequestCollaboration: (String) -> Unit
+    onNavigateToRequestCollaboration: (String) -> Unit,
+    onNavigateToWorkspace: (String) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -108,7 +134,43 @@ private fun MatchingList(
         }
         
         item {
-            Spacer(modifier = Modifier.height(24.dp))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Ready to start building?",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Head to the Project Workspace to collaborate, manage tasks, and track GitHub activity.",
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { onNavigateToWorkspace(projectId) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("🚀 Launch Project Workspace", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -167,7 +229,8 @@ fun DeveloperMatchCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     match.matchedSkills.forEach { skill ->
-                        SkillChip(skill = skill)
+                        val verifiedMetric = ContributionVerificationEngine.getSkillConfidence(match.developer, skill)
+                        SkillChip(skill = skill, isVerified = verifiedMetric.isVerified)
                     }
                 }
             }

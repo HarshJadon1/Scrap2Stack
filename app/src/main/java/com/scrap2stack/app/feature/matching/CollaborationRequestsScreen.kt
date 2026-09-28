@@ -21,14 +21,31 @@ fun CollaborationRequestsScreen(
     onNavigateBack: () -> Unit
 ) {
     val requestsState by viewModel.requestsState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Received", "Sent")
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(selectedTab) {
         viewModel.loadRequests()
     }
 
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is CollaborationUiState.Success -> {
+                snackbarHostState.showSnackbar(state.message)
+                viewModel.resetState()
+            }
+            is CollaborationUiState.Error -> {
+                snackbarHostState.showSnackbar(state.message)
+                viewModel.resetState()
+            }
+            else -> {}
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Collaboration Requests") },

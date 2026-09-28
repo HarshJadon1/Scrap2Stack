@@ -1,6 +1,8 @@
 package com.scrap2stack.app.data.repository
 
 import com.scrap2stack.app.core.network.supabase
+import com.scrap2stack.app.data.local.cache.AppCache
+import com.scrap2stack.app.data.mapper.*
 import com.scrap2stack.app.data.remote.dto.*
 import com.scrap2stack.app.domain.model.*
 import com.scrap2stack.app.domain.repository.ProjectRepository
@@ -18,9 +20,16 @@ class ProjectRepositoryImpl : ProjectRepository {
             val dtos = supabase.from("projects")
                 .select()
                 .decodeList<ProjectDto>()
-            Result.success(dtos.map { it.toDomain() })
+            val projects = dtos.map { it.toDomain() }
+            AppCache.saveProjects(projects)
+            Result.success(projects)
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = AppCache.getAllProjects()
+            if (cached.isNotEmpty()) {
+                Result.success(cached)
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
@@ -64,9 +73,16 @@ class ProjectRepositoryImpl : ProjectRepository {
                     }
                 }
                 .decodeList<ProjectDto>()
-            Result.success(dtos.map { it.toDomain() })
+            val projects = dtos.map { it.toDomain() }
+            AppCache.saveMyProjects(projects)
+            Result.success(projects)
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = AppCache.myProjectsFlow.value
+            if (cached.isNotEmpty()) {
+                Result.success(cached)
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
@@ -245,9 +261,16 @@ class ProjectRepositoryImpl : ProjectRepository {
                     }
                 }
                 .decodeSingle<ProjectDto>()
-            Result.success(dto.toDomain())
+            val project = dto.toDomain()
+            AppCache.putProject(project)
+            Result.success(project)
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = AppCache.getProject(id)
+            if (cached != null) {
+                Result.success(cached)
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
@@ -279,6 +302,7 @@ class ProjectRepositoryImpl : ProjectRepository {
                 .decodeSingle<ProjectDto>()
 
             val createdProject = createdDto.toDomain()
+            AppCache.putProject(createdProject)
 
             // Automatically generate and persist initial ScrapAI Analysis for new projects
             try {
@@ -297,8 +321,19 @@ class ProjectRepositoryImpl : ProjectRepository {
             val userId = supabase.auth.currentSessionOrNull()?.user?.id 
                 ?: return@withContext Result.failure(Exception("User not authenticated"))
             
+            val updateRequest = UpdateProjectRequest(
+                name = project.name,
+                description = project.description,
+                status = project.status.name,
+                problem = project.problem.ifBlank { null },
+                category = project.category.ifBlank { null },
+                technologies = project.technologies,
+                requiredSkills = project.requiredSkills,
+                githubUrl = project.githubUrl.ifBlank { null }
+            )
+
             val updatedDto = supabase.from("projects")
-                .update(project.toDto()) {
+                .update(updateRequest) {
                     filter {
                         eq("id", project.id)
                         eq("owner_id", userId)
@@ -307,7 +342,9 @@ class ProjectRepositoryImpl : ProjectRepository {
                 }
                 .decodeSingle<ProjectDto>()
             
-            Result.success(updatedDto.toDomain())
+            val updatedProject = updatedDto.toDomain()
+            AppCache.putProject(updatedProject)
+            Result.success(updatedProject)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -318,6 +355,14 @@ class ProjectRepositoryImpl : ProjectRepository {
             val userId = supabase.auth.currentSessionOrNull()?.user?.id 
                 ?: return@withContext Result.failure(Exception("User not authenticated"))
 
+            // Clean up child tables to prevent foreign key constraint violations
+            try { supabase.from("saved_projects").delete { filter { eq("project_id", id) } } } catch (_: Exception) {}
+            try { supabase.from("project_ai_analyses").delete { filter { eq("project_id", id) } } } catch (_: Exception) {}
+            try { supabase.from("tasks").delete { filter { eq("project_id", id) } } } catch (_: Exception) {}
+            try { supabase.from("roadmap_items").delete { filter { eq("project_id", id) } } } catch (_: Exception) {}
+            try { supabase.from("collaboration_requests").delete { filter { eq("project_id", id) } } } catch (_: Exception) {}
+            try { supabase.from("project_members").delete { filter { eq("project_id", id) } } } catch (_: Exception) {}
+
             supabase.from("projects")
                 .delete {
                     filter {
@@ -325,6 +370,7 @@ class ProjectRepositoryImpl : ProjectRepository {
                         eq("owner_id", userId)
                     }
                 }
+            AppCache.removeProject(id)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -394,86 +440,5 @@ class ProjectRepositoryImpl : ProjectRepository {
             Result.failure(e)
         }
     }
-
-    private fun ProjectDto.toDomain(): Project {
-        val domainProject = Project(
-            id = id,
-            ownerId = ownerId,
-            name = name,
-            description = description,
-            technologies = technologies,
-            requiredSkills = requiredSkills,
-            status = try { ProjectStatus.valueOf(status.uppercase()) } catch (e: Exception) { ProjectStatus.INACTIVE },
-            revivalScore = revivalScore,
-            lastActivity = updatedAt,
-            teamSize = teamSize,
-            problem = problem ?: "",
-            category = category ?: "",
-            githubUrl = githubUrl ?: ""
-        )
-
-        val finalScore = if (revivalScore > 0) revivalScore else ScrapAIEngine.calculateRevivalScore(domainProject)
-
-        return domainProject.copy(revivalScore = finalScore)
-    }
-
-    private fun Project.toDto(): ProjectDto {
-        return ProjectDto(
-            id = id,
-            ownerId = ownerId,
-            name = name,
-            description = description,
-            problem = problem,
-            category = category,
-            status = status.name,
-            technologies = technologies,
-            requiredSkills = requiredSkills,
-            githubUrl = githubUrl,
-            teamSize = teamSize,
-            revivalScore = revivalScore,
-            createdAt = "",
-            updatedAt = ""
-        )
-    }
-
-    private fun AnalysisDto.toDomain(): ProjectAnalysis {
-        return ProjectAnalysis(
-            id = id,
-            projectId = projectId,
-            projectSummary = summary,
-            currentState = currentState,
-            missingComponents = missingComponents.map { it.toDomain() },
-            requiredSkills = requiredSkills.map { it.toDomain() },
-            roadmap = roadmap.map { it.toDomain() },
-            revivalScore = revivalScore,
-            scoreExplanation = explanation,
-            risks = risks.map { it.toDomain() },
-            recommendations = recommendations,
-            analyzedAt = createdAt
-        )
-    }
-
-    private fun MissingComponentDto.toDomain() = MissingComponent(
-        title = title,
-        description = description,
-        priority = try { Priority.valueOf(priority.uppercase()) } catch (e: Exception) { Priority.MEDIUM }
-    )
-
-    private fun SkillRequirementDto.toDomain() = RequiredSkillRecommendation(
-        skill = name,
-        importance = try { Importance.valueOf(importance.uppercase()) } catch (e: Exception) { Importance.RECOMMENDED }
-    )
-
-    private fun RoadmapStepDto.toDomain() = RoadmapStep(
-        step = phase,
-        title = title,
-        description = description,
-        priority = try { Priority.valueOf(priority?.uppercase() ?: "MEDIUM") } catch (e: Exception) { Priority.MEDIUM }
-    )
-
-    private fun RiskFactorDto.toDomain() = ProjectRisk(
-        risk = risk,
-        severity = try { Priority.valueOf(severity.uppercase()) } catch (e: Exception) { Priority.MEDIUM },
-        explanation = explanation
-    )
 }
+

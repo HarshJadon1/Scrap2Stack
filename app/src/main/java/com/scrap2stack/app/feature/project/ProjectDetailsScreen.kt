@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
@@ -306,21 +307,37 @@ private fun ProjectDetailsContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Actions
-        Scrap2StackOutlinedButton(
-            text = "View Developer Matches",
-            onClick = onNavigateToMatches
+        // Primary Workflow CTA: Open Workspace
+        Scrap2StackButton(
+            text = "🚀 Enter Project Workspace",
+            onClick = onNavigateToWorkspace
         )
-        
-        Spacer(modifier = Modifier.height(8.dp))
 
-        TextButton(
-            onClick = onNavigateToWorkspace,
-            modifier = Modifier.fillMaxWidth()
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Icon(Icons.Default.Terminal, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Open Project Workspace")
+            OutlinedButton(
+                onClick = onNavigateToMatches,
+                modifier = Modifier.weight(1f),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Find Matches", style = MaterialTheme.typography.labelMedium)
+            }
+
+            OutlinedButton(
+                onClick = onNavigateToScrapAI,
+                modifier = Modifier.weight(1f),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("AI Roadmap", style = MaterialTheme.typography.labelMedium)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -460,11 +477,16 @@ fun EditProjectDialog(
                 )
 
                 Text("Category", style = MaterialTheme.typography.titleSmall)
+                val categoryOptions = remember(project.category) {
+                    (listOf("Web", "Mobile", "AI/ML", "DevOps", "Cloud", "Open Source") + project.category).distinct().filter { it.isNotBlank() }
+                }
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    listOf("Web", "Mobile", "AI/ML", "DevOps").forEach { cat ->
+                    categoryOptions.forEach { cat ->
                         FilterChip(
                             selected = category == cat,
                             onClick = { category = cat },
@@ -475,7 +497,9 @@ fun EditProjectDialog(
 
                 Text("Project Status", style = MaterialTheme.typography.titleSmall)
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     ProjectStatus.entries.forEach { st ->

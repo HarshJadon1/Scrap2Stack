@@ -80,6 +80,21 @@ data class CreateProjectRequest(
 )
 
 @Serializable
+data class UpdateProjectRequest(
+    val name: String,
+    val description: String,
+    val status: String,
+    val problem: String? = null,
+    val category: String? = null,
+    val technologies: List<String> = emptyList(),
+    @SerialName("required_skills")
+    val requiredSkills: List<String> = emptyList(),
+    @SerialName("github_url")
+    val githubUrl: String? = null
+)
+
+
+@Serializable
 data class ProjectPaginationResponse(
     val projects: List<ProjectDto>,
     val page: Int,

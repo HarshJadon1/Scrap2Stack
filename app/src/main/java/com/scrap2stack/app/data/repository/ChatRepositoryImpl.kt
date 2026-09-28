@@ -1,6 +1,8 @@
 package com.scrap2stack.app.data.repository
 
 import com.scrap2stack.app.core.network.supabase
+import com.scrap2stack.app.core.network.toUserFriendlyMessage
+import com.scrap2stack.app.data.mapper.*
 import com.scrap2stack.app.data.remote.dto.ChatMessageDto
 import com.scrap2stack.app.data.remote.dto.UserDto
 import com.scrap2stack.app.domain.model.ChatMessage
@@ -84,7 +86,7 @@ class ChatRepositoryImpl : ChatRepository {
 
             Result.success(createdDto.toDomain())
         } catch (e: Exception) {
-            Result.failure(Exception("Failed to send message: ${e.localizedMessage}"))
+            Result.failure(Exception(e.toUserFriendlyMessage("Failed to send message.")))
         }
     }
 
@@ -112,38 +114,5 @@ class ChatRepositoryImpl : ChatRepository {
             }
         }
     }
-
-    private fun ChatMessageDto.toDomain(): ChatMessage {
-        return ChatMessage(
-            id = id,
-            projectId = projectId,
-            senderId = senderId,
-            message = message,
-            createdAt = createdAt,
-            sender = sender?.toDomain()
-        )
-    }
-
-    private fun UserDto.toDomain(): Developer {
-        return Developer(
-            id = id,
-            name = name,
-            username = username,
-            bio = bio ?: "",
-            profileImageUrl = profileImage,
-            skills = skills,
-            interests = interests,
-            experienceLevel = try {
-                ExperienceLevel.valueOf(experienceLevel?.uppercase() ?: "BEGINNER")
-            } catch (e: Exception) {
-                ExperienceLevel.BEGINNER
-            },
-            githubUrl = githubUrl ?: "",
-            linkedinUrl = linkedinUrl ?: "",
-            portfolioUrl = portfolioUrl ?: "",
-            charms = charms,
-            createdAt = createdAt ?: "",
-            updatedAt = updatedAt ?: ""
-        )
-    }
 }
+

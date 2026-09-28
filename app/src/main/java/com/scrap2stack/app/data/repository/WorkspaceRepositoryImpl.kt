@@ -1,10 +1,11 @@
 package com.scrap2stack.app.data.repository
 
 import com.scrap2stack.app.core.network.supabase
+import com.scrap2stack.app.data.local.cache.AppCache
+import com.scrap2stack.app.data.mapper.*
 import com.scrap2stack.app.data.remote.dto.ProjectMemberDto
 import com.scrap2stack.app.data.remote.dto.RoadmapItemDto
 import com.scrap2stack.app.data.remote.dto.TaskDto
-import com.scrap2stack.app.data.remote.dto.UserDto
 import com.scrap2stack.app.domain.model.*
 import com.scrap2stack.app.domain.repository.WorkspaceRepository
 import io.github.jan.supabase.auth.auth
@@ -35,9 +36,16 @@ class WorkspaceRepositoryImpl : WorkspaceRepository {
                 }
                 .decodeList<TaskDto>()
 
-            Result.success(tasks.map { it.toDomain() })
+            val domainTasks = tasks.map { it.toDomain() }
+            AppCache.saveTasks(projectId, domainTasks)
+            Result.success(domainTasks)
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = AppCache.getTasks(projectId)
+            if (cached != null) {
+                Result.success(cached)
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
@@ -61,7 +69,9 @@ class WorkspaceRepositoryImpl : WorkspaceRepository {
                 }
                 .decodeSingle<TaskDto>()
 
-            Result.success(created.toDomain())
+            val createdTask = created.toDomain()
+            AppCache.updateTask(projectId, createdTask)
+            Result.success(createdTask)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -76,6 +86,7 @@ class WorkspaceRepositoryImpl : WorkspaceRepository {
                     }
                 }
 
+            AppCache.updateTaskStatus(taskId, TaskStatus.fromString(status))
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -92,9 +103,16 @@ class WorkspaceRepositoryImpl : WorkspaceRepository {
                 }
                 .decodeList<RoadmapItemDto>()
 
-            Result.success(items.map { it.toDomain() })
+            val domainItems = items.map { it.toDomain() }
+            AppCache.saveRoadmap(projectId, domainItems)
+            Result.success(domainItems)
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = AppCache.getRoadmap(projectId)
+            if (cached != null) {
+                Result.success(cached)
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
@@ -123,9 +141,16 @@ class WorkspaceRepositoryImpl : WorkspaceRepository {
                 }
                 .decodeList<ProjectMemberDto>()
 
-            Result.success(members.map { it.toDomain() })
+            val domainMembers = members.map { it.toDomain() }
+            AppCache.saveMembers(projectId, domainMembers)
+            Result.success(domainMembers)
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = AppCache.getMembers(projectId)
+            if (cached != null) {
+                Result.success(cached)
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
@@ -162,68 +187,5 @@ class WorkspaceRepositoryImpl : WorkspaceRepository {
             }
         }
     }
-
-    private fun TaskDto.toDomain(): Task {
-        return Task(
-            id = id,
-            title = title,
-            assignee = assigneeId,
-            priority = try { TaskPriority.valueOf(priority.uppercase()) } catch (e: Exception) { TaskPriority.MEDIUM },
-            skill = skill,
-            status = try { TaskStatus.valueOf(status.uppercase()) } catch (e: Exception) { TaskStatus.TODO },
-            dueDate = dueDate
-        )
-    }
-
-    private fun RoadmapItemDto.toDomain(): RoadmapItem {
-        return RoadmapItem(
-            id = id,
-            roadmapId = roadmapId,
-            title = title,
-            description = description,
-            order = order,
-            status = status,
-            requiredSkills = requiredSkills,
-            requiredRoles = requiredRoles,
-            estimatedEffort = estimatedEffort,
-            dependencies = dependencies,
-            milestone = milestone,
-            createdAt = createdAt,
-            updatedAt = updatedAt
-        )
-    }
-
-    private fun ProjectMemberDto.toDomain(): ProjectMember {
-        return ProjectMember(
-            id = id,
-            projectId = projectId,
-            userId = userId,
-            role = try { ProjectRole.valueOf(role.uppercase()) } catch (e: Exception) { ProjectRole.CONTRIBUTOR },
-            joinedAt = joinedAt,
-            user = profiles?.toDomain()
-        )
-    }
-
-    private fun UserDto.toDomain(): Developer {
-        return Developer(
-            id = id,
-            name = name,
-            username = username,
-            bio = bio ?: "",
-            profileImageUrl = profileImage,
-            skills = skills,
-            interests = interests,
-            experienceLevel = try {
-                ExperienceLevel.valueOf(experienceLevel?.uppercase() ?: "BEGINNER")
-            } catch (e: Exception) {
-                ExperienceLevel.BEGINNER
-            },
-            githubUrl = githubUrl ?: "",
-            linkedinUrl = linkedinUrl ?: "",
-            portfolioUrl = portfolioUrl ?: "",
-            charms = charms,
-            createdAt = createdAt ?: "",
-            updatedAt = updatedAt ?: ""
-        )
-    }
 }
+

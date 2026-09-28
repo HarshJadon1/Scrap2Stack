@@ -9,6 +9,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.scrap2stack.app.core.network.SessionManager
 import com.scrap2stack.app.data.repository.AuthRepositoryImpl
 import com.scrap2stack.app.data.repository.CharmsRepositoryImpl
@@ -189,14 +190,22 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.ProjectDetails.route) { backStackEntry ->
+        composable(
+            route = Screen.ProjectDetails.route,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "scrap2stack://project/{projectId}" },
+                navDeepLink { uriPattern = "https://scrap2stack.app/project/{projectId}" }
+            )
+        ) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
             val getProjectDetailsUseCase = remember { GetProjectDetailsUseCase(projectRepository) }
             val deleteProjectUseCase = remember { DeleteProjectUseCase(projectRepository) }
+            val updateProjectUseCase = remember { UpdateProjectUseCase(projectRepository) }
             val projectDetailsViewModel: ProjectDetailsViewModel = viewModel(
                 factory = ProjectDetailsViewModelFactory(
                     getProjectDetailsUseCase,
                     deleteProjectUseCase,
+                    updateProjectUseCase,
                     projectRepository,
                     userRepository
                 )
@@ -220,7 +229,7 @@ fun NavGraph(navController: NavHostController) {
                 viewModel = createProjectViewModel,
                 onNavigateBack = actions.navigateBack,
                 onProjectCreated = { projectId ->
-                    actions.navigateToProjectDetails(projectId)
+                    actions.navigateToScrapAI(projectId)
                 }
             )
         }
@@ -245,7 +254,8 @@ fun NavGraph(navController: NavHostController) {
                 projectId = projectId,
                 viewModel = scrapAIAnalysisViewModel,
                 onNavigateBack = actions.navigateBack,
-                onNavigateToRevivalScore = { actions.navigateToRevivalScore(projectId) }
+                onNavigateToRevivalScore = { actions.navigateToRevivalScore(projectId) },
+                onNavigateToWorkspace = { pId -> actions.navigateToWorkspace(pId) }
             )
         }
         
@@ -289,7 +299,8 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToRequestCollaboration = { developerId ->
                     actions.navigateToCollaborationRequest(projectId, developerId)
-                }
+                },
+                onNavigateToWorkspace = { actions.navigateToWorkspace(projectId) }
             )
         }
         
@@ -360,7 +371,13 @@ fun NavGraph(navController: NavHostController) {
             )
         }
         
-        composable(Screen.Workspace.route) { backStackEntry ->
+        composable(
+            route = Screen.Workspace.route,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "scrap2stack://workspace/{projectId}" },
+                navDeepLink { uriPattern = "https://scrap2stack.app/workspace/{projectId}" }
+            )
+        ) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
             val workspaceViewModel: WorkspaceViewModel = viewModel(
                 factory = WorkspaceViewModelFactory(workspaceRepository)
