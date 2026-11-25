@@ -111,6 +111,26 @@ fun MainScreen(
 
     var activeAlert by remember { mutableStateOf<InAppAlert?>(null) }
     var lastAlertKey by remember { mutableStateOf<String?>(null) }
+    var wasAwayFromMain by remember { mutableStateOf(false) }
+
+    val rootBackStackEntry by rootNavController.currentBackStackEntryAsState()
+    val currentRootRoute = rootBackStackEntry?.destination?.route
+
+    LaunchedEffect(currentRootRoute) {
+        if (currentRootRoute == "main") {
+            if (wasAwayFromMain) {
+                profileViewModel.loadProfile()
+                homeViewModel.loadHomeData()
+                discoveryViewModel.loadProjects()
+                myProjectsViewModel.loadMyProjects()
+                collaborationViewModel.loadRequests()
+                notificationsViewModel.loadNotifications()
+            }
+            wasAwayFromMain = false
+        } else if (currentRootRoute != null) {
+            wasAwayFromMain = true
+        }
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route

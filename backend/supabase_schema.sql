@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.user_charms (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id TEXT NOT NULL,
     project_id TEXT,
-    contribution_type TEXT NOT NULL DEFAULT 'TASK_COMPLETION',
+    contribution_type TEXT NOT NULL DEFAULT 'TASK_COMPLETED',
     charms INT NOT NULL DEFAULT 10,
     description TEXT NOT NULL DEFAULT 'Contribution awarded',
     reference_id TEXT,
@@ -341,7 +341,7 @@ BEGIN
         v_uid_text,
         p_project_id::TEXT,
         10,
-        'TASK_COMPLETION',
+        'TASK_COMPLETED',
         'Completed task in ' || COALESCE(v_project_name, 'workspace'),
         p_task_id::TEXT
     );

@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.util.UUID
@@ -113,6 +115,44 @@ class WorkspaceRepositoryImpl : WorkspaceRepository {
             } else {
                 Result.failure(e)
             }
+        }
+    }
+
+    override suspend fun saveRoadmapItems(projectId: String, items: List<RoadmapItem>): Result<List<RoadmapItem>> = withContext(Dispatchers.IO) {
+        try {
+            try {
+                supabase.from("roadmap_items").delete {
+                    filter { eq("project_id", projectId) }
+                }
+            } catch (_: Exception) {}
+
+            val payloads = items.map { item ->
+                buildJsonObject {
+                    put("project_id", projectId)
+                    put("title", item.title)
+                    put("description", item.description)
+                    put("order", item.order)
+                    put("status", item.status)
+                    put("required_skills", JsonArray(item.requiredSkills.map { JsonPrimitive(it) }))
+                    put("required_roles", JsonArray(item.requiredRoles.map { JsonPrimitive(it) }))
+                    put("estimated_effort", item.estimatedEffort)
+                    put("dependencies", JsonArray(item.dependencies.map { JsonPrimitive(it) }))
+                    put("milestone", item.milestone)
+                }
+            }
+
+            val inserted = supabase.from("roadmap_items")
+                .insert(payloads) {
+                    select()
+                }
+                .decodeList<RoadmapItemDto>()
+
+            val domainItems = inserted.map { it.toDomain() }
+            AppCache.saveRoadmap(projectId, domainItems)
+            Result.success(domainItems)
+        } catch (_: Exception) {
+            AppCache.saveRoadmap(projectId, items)
+            Result.success(items)
         }
     }
 

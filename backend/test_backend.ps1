@@ -35,7 +35,9 @@ $tables = @(
     "project_members", 
     "roadmaps",
     "roadmap_items",
-    "notifications"
+    "notifications",
+    "saved_projects",
+    "project_ai_analyses"
 )
 
 $passed = 0
@@ -59,9 +61,38 @@ foreach ($t in $tables) {
     }
 }
 
+Write-Host "`n[3/3] Testing Backend RPC Functions (via OpenAPI Schema):"
+$rpcWarn = 0
+$openApiPaths = @()
+try {
+    $openApiRaw = curl.exe -s -H "apikey: $apiKey" "$baseUrl/rest/v1/"
+    if ($openApiRaw) {
+        $openApiJson = $openApiRaw | ConvertFrom-Json
+        if ($openApiJson.paths) {
+            $openApiPaths = $openApiJson.paths.PSObject.Properties.Name
+        }
+    }
+} catch { }
+$rpcs = @(
+    "respond_to_collaboration",
+    "award_task_completion_charms",
+    "award_project_revived_charms",
+    "award_project_shipped_charms"
+)
+foreach ($fn in $rpcs) {
+    Write-Host "  - Checking '$fn'... " -NoNewline
+    if ($openApiPaths -contains "/rpc/$fn") {
+        Write-Host "OK (Registered in PostgREST schema)" -ForegroundColor Green
+        $passed++
+    } else {
+        Write-Host "MISSING IN SCHEMA CACHE (Run backend\supabase_schema.sql)" -ForegroundColor Yellow
+        $rpcWarn++
+    }
+}
+
 Write-Host "`n==========================================================" -ForegroundColor Cyan
-Write-Host "SUMMARY: $passed passed, $failed need attention." -ForegroundColor $(if ($failed -eq 0) { "Green" } else { "Yellow" })
-if ($failed -gt 0) {
+Write-Host "SUMMARY: $passed passed, $failed failed, $rpcWarn RPC warnings." -ForegroundColor $(if ($failed -eq 0 -and $rpcWarn -eq 0) { "Green" } else { "Yellow" })
+if ($failed -gt 0 -or $rpcWarn -gt 0) {
     Write-Host "FIX: Copy content of backend\supabase_schema.sql and run it in the Supabase Dashboard SQL Editor." -ForegroundColor Magenta
 }
 Write-Host "==========================================================" -ForegroundColor Cyan

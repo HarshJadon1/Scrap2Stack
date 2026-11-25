@@ -17,7 +17,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-class GitHubService {
+open class GitHubService {
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
@@ -39,7 +39,7 @@ class GitHubService {
         return if (segments.size >= 2) Pair(segments[0], segments[1]) else null
     }
 
-    suspend fun fetchRepoInfo(owner: String, repo: String): Result<LiveDataResult<GitHubRepoInfo>> = withContext(Dispatchers.IO) {
+    open suspend fun fetchRepoInfo(owner: String, repo: String): Result<LiveDataResult<GitHubRepoInfo>> = withContext(Dispatchers.IO) {
         try {
             val url = "https://api.github.com/repos/$owner/$repo"
             val response: HttpResponse = ktorClient.get(url) {
@@ -83,7 +83,7 @@ class GitHubService {
         }
     }
 
-    suspend fun fetchRecentCommits(
+    open suspend fun fetchRecentCommits(
         owner: String,
         repo: String,
         projectId: String = ""
