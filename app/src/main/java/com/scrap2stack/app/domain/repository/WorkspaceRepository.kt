@@ -10,6 +10,7 @@ interface WorkspaceRepository {
     suspend fun createTask(task: Task, projectId: String): Result<Task>
     suspend fun updateTaskStatus(taskId: String, status: String): Result<Unit>
     suspend fun getRoadmapItems(projectId: String): Result<List<RoadmapItem>>
+    suspend fun saveRoadmapItems(projectId: String, items: List<RoadmapItem>): Result<List<RoadmapItem>>
     suspend fun updateRoadmapItemStatus(itemId: String, status: String): Result<Unit>
     suspend fun getProjectMembers(projectId: String): Result<List<ProjectMember>>
     fun observeWorkspaceUpdates(projectId: String): Flow<Unit>

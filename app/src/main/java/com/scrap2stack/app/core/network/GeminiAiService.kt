@@ -47,7 +47,7 @@ data class GeminiCandidate(
     val content: GeminiContent? = null
 )
 
-class GeminiAiService {
+open class GeminiAiService {
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -60,7 +60,7 @@ class GeminiAiService {
         }
     }
 
-    suspend fun generateTaskSolution(
+    open suspend fun generateTaskSolution(
         taskTitle: String,
         skill: String,
         projectName: String
@@ -191,7 +191,7 @@ class GeminiAiService {
         }
     }
 
-    suspend fun generateRevivalRoadmap(
+    open suspend fun generateRevivalRoadmap(
         projectName: String,
         techStack: List<String>,
         problem: String

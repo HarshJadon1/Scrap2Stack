@@ -34,10 +34,9 @@ sealed class WorkspaceState {
 class WorkspaceViewModel(
     private val repository: WorkspaceRepository,
     private val projectRepository: ProjectRepository = ProjectRepositoryImpl(),
-    private val charmsRepository: CharmsRepository = CharmsRepositoryImpl()
+    private val charmsRepository: CharmsRepository = CharmsRepositoryImpl(),
+    private val geminiService: GeminiAiService = GeminiAiService()
 ) : ViewModel() {
-
-    private val geminiService = GeminiAiService()
 
     private val _isGeneratingRoadmap = MutableStateFlow(false)
     val isGeneratingRoadmap: StateFlow<Boolean> = _isGeneratingRoadmap.asStateFlow()
@@ -147,10 +146,11 @@ class WorkspaceViewModel(
                 problem = targetProblem
             )
             result.onSuccess { live ->
+                val persisted = repository.saveRoadmapItems(projectId, live.data).getOrDefault(live.data)
                 val currentState = _uiState.value
                 if (currentState is WorkspaceState.Success) {
                     _uiState.value = currentState.copy(
-                        roadmapItems = live.data,
+                        roadmapItems = persisted,
                         isRoadmapLiveData = live.isLiveData,
                         roadmapStatusNote = live.statusNote
                     )
@@ -158,7 +158,7 @@ class WorkspaceViewModel(
                     _uiState.value = WorkspaceState.Success(
                         project = currentProject,
                         tasks = emptyList(),
-                        roadmapItems = live.data,
+                        roadmapItems = persisted,
                         members = emptyList(),
                         isRoadmapLiveData = live.isLiveData,
                         roadmapStatusNote = live.statusNote

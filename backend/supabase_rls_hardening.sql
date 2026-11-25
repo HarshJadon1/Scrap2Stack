@@ -241,7 +241,21 @@ CREATE POLICY "Owner select notifications" ON public.notifications
 CREATE POLICY "Owner update notifications" ON public.notifications
     FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
--- 9. User Charms Ledger: authenticated read, writes restricted to SECURITY DEFINER RPCs
+-- 9. Saved Projects & ScrapAI Analyses
+ALTER TABLE IF EXISTS public.saved_projects ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owner saved_projects" ON public.saved_projects;
+CREATE POLICY "Owner saved_projects" ON public.saved_projects
+    FOR ALL USING (auth.uid()::TEXT = user_id) WITH CHECK (auth.uid()::TEXT = user_id);
+
+ALTER TABLE IF EXISTS public.project_ai_analyses ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Authenticated select project_ai_analyses" ON public.project_ai_analyses;
+DROP POLICY IF EXISTS "Authenticated insert project_ai_analyses" ON public.project_ai_analyses;
+CREATE POLICY "Authenticated select project_ai_analyses" ON public.project_ai_analyses
+    FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Authenticated insert project_ai_analyses" ON public.project_ai_analyses
+    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- 10. User Charms Ledger: authenticated read, writes restricted to SECURITY DEFINER RPCs
 ALTER TABLE public.user_charms ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public select user_charms" ON public.user_charms;
 DROP POLICY IF EXISTS "Public insert user_charms" ON public.user_charms;
