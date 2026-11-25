@@ -22,17 +22,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.scrap2stack.app.core.ui.components.BrutalBadge
+import com.scrap2stack.app.core.ui.components.BrutalHeaderTag
 import com.scrap2stack.app.core.ui.components.EmptyStateView
 import com.scrap2stack.app.core.ui.components.ErrorView
 import com.scrap2stack.app.core.ui.components.LoadingView
+import com.scrap2stack.app.core.ui.components.brutalCard
+import com.scrap2stack.app.core.ui.components.dotGridBackground
+import com.scrap2stack.app.core.ui.components.tactileBrutalCard
 import com.scrap2stack.app.domain.model.CharmContribution
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
-import com.scrap2stack.app.ui.theme.PrimaryIndigoLight
-import com.scrap2stack.app.ui.theme.RevivalEmerald
+import com.scrap2stack.app.ui.theme.brutalColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,31 +47,62 @@ fun CharmsScreen(
     viewModel: CharmsViewModel,
     onNavigateBack: (() -> Unit)? = null
 ) {
+    val brutal = MaterialTheme.brutalColors
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
+        containerColor = brutal.canvas,
         topBar = {
             if (onNavigateBack != null) {
-                TopAppBar(
-                    title = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(brutal.canvas)
+                        .statusBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = brutal.surfaceRaised,
+                                borderColor = brutal.border,
+                                borderWidth = 2.dp,
+                                shadowColor = brutal.shadow,
+                                shadowOffsetX = 3.dp,
+                                shadowOffsetY = 3.dp,
+                                onClick = onNavigateBack
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = brutal.textPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        BrutalHeaderTag(text = "REP // CHARMS")
                         Text(
                             "Reputation Hub",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                            color = brutal.textPrimary
                         )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent
-                    )
-                )
+                    }
+                }
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .dotGridBackground()
+        ) {
             when (val state = uiState) {
                 is CharmsUiState.Loading -> LoadingView(modifier = Modifier.padding(20.dp))
                 is CharmsUiState.Error -> ErrorView(
@@ -82,6 +120,8 @@ fun CharmsScreen(
                         item {
                             if (onNavigateBack == null) {
                                 Spacer(modifier = Modifier.height(16.dp))
+                                BrutalHeaderTag(text = "REP // CHARMS")
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = "Reputation Hub",
                                     style = MaterialTheme.typography.headlineMedium.copy(
@@ -89,13 +129,13 @@ fun CharmsScreen(
                                         fontSize = 28.sp,
                                         letterSpacing = (-0.5).sp
                                     ),
-                                    color = Color.White
+                                    color = brutal.textPrimary
                                 )
                             }
                             Text(
                                 text = "Charms measure your trust, mentorship, and code revival footprint.",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                                color = brutal.textMuted
                             )
                         }
 
@@ -106,33 +146,40 @@ fun CharmsScreen(
 
                         // History Section Header
                         item {
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(28.dp)
-                                        .clip(CircleShape)
-                                        .background(PrimaryIndigo.copy(alpha = 0.15f)),
+                                        .size(30.dp)
+                                        .brutalCard(
+                                            cornerRadius = 8.dp,
+                                            containerColor = PrimaryIndigo,
+                                            borderColor = brutal.border,
+                                            borderWidth = 1.5.dp,
+                                            shadowColor = brutal.shadow,
+                                            shadowOffsetX = 2.dp,
+                                            shadowOffsetY = 2.dp
+                                        ),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.History,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp),
-                                        tint = PrimaryIndigoLight
+                                        tint = Color.White
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
                                     text = "Contribution History",
                                     style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.Black,
                                         fontSize = 18.sp
                                     ),
-                                    color = Color.White
+                                    color = brutal.textPrimary
                                 )
                             }
                         }
@@ -158,24 +205,21 @@ fun CharmsScreen(
 
 @Composable
 fun CharmsHeroCard(totalCharms: Int) {
-    val cardBrush = Brush.verticalGradient(
-        listOf(Color(0xFF131D33), Color(0xFF0F172A))
-    )
-    val borderBrush = Brush.linearGradient(
-        listOf(
-            ElectricMint.copy(alpha = 0.45f),
-            PrimaryIndigo.copy(alpha = 0.25f),
-            Color.Transparent
-        )
-    )
+    val brutal = MaterialTheme.brutalColors
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(26.dp))
-            .background(cardBrush)
-            .border(BorderStroke(1.dp, borderBrush), RoundedCornerShape(26.dp))
-            .padding(26.dp),
+            .brutalCard(
+                cornerRadius = 18.dp,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = brutal.shadow,
+                shadowOffsetX = 5.dp,
+                shadowOffsetY = 5.dp
+            )
+            .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -183,21 +227,23 @@ fun CharmsHeroCard(totalCharms: Int) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            listOf(ElectricMint.copy(alpha = 0.25f), Color.Transparent)
-                        )
-                    )
-                    .border(BorderStroke(1.5.dp, ElectricMint.copy(alpha = 0.5f)), CircleShape),
+                    .size(68.dp)
+                    .brutalCard(
+                        cornerRadius = 16.dp,
+                        containerColor = ElectricMint,
+                        borderColor = brutal.border,
+                        borderWidth = 2.dp,
+                        shadowColor = BrutalShadowBlack,
+                        shadowOffsetX = 3.dp,
+                        shadowOffsetY = 3.dp
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Stars,
                     contentDescription = null,
-                    modifier = Modifier.size(38.dp),
-                    tint = ElectricMint
+                    modifier = Modifier.size(34.dp),
+                    tint = BrutalInkBlack
                 )
             }
 
@@ -206,47 +252,53 @@ fun CharmsHeroCard(totalCharms: Int) {
             Text(
                 text = "$totalCharms",
                 style = MaterialTheme.typography.displayMedium.copy(
+                    fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Black,
                     fontSize = 46.sp,
                     letterSpacing = (-1).sp
                 ),
-                color = ElectricMint
+                color = brutal.accentOnSurface
             )
 
             Text(
                 text = "TOTAL REPUTATION CHARMS",
                 style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.2.sp,
                     fontSize = 11.sp
                 ),
-                color = Color.White.copy(alpha = 0.7f)
+                color = brutal.textMuted
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White.copy(alpha = 0.04f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+            Row(
+                modifier = Modifier
+                    .brutalCard(
+                        cornerRadius = 12.dp,
+                        containerColor = brutal.surfaceRaised,
+                        borderColor = brutal.border,
+                        borderWidth = 1.5.dp,
+                        shadowColor = brutal.shadow,
+                        shadowOffsetX = 2.dp,
+                        shadowOffsetY = 2.dp
+                    )
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Verified,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = ElectricMint
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Level 2: Priority Collaboration Requests Active",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = Color.White.copy(alpha = 0.85f)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Verified,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = brutal.accentOnSurface
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Level 2: Priority Collaboration Requests Active",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = brutal.textPrimary
+                )
             }
         }
     }
@@ -254,16 +306,20 @@ fun CharmsHeroCard(totalCharms: Int) {
 
 @Composable
 fun CharmHistoryRow(item: CharmContribution) {
-    val rowBorder = Brush.linearGradient(
-        listOf(Color.White.copy(alpha = 0.09f), Color.Transparent)
-    )
+    val brutal = MaterialTheme.brutalColors
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color(0xFF10192A))
-            .border(BorderStroke(1.dp, rowBorder), RoundedCornerShape(18.dp))
+            .brutalCard(
+                cornerRadius = 14.dp,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = brutal.shadow,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
             .padding(16.dp)
     ) {
         Row(
@@ -274,43 +330,36 @@ fun CharmHistoryRow(item: CharmContribution) {
                 Text(
                     text = item.description.ifEmpty { item.contributionType.name },
                     style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         fontSize = 15.sp
                     ),
-                    color = Color.White
+                    color = brutal.textPrimary
                 )
                 if (!item.projectName.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Project: ${item.projectName}",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = ElectricMint.copy(alpha = 0.85f)
+                        color = brutal.accentOnSurface
                     )
                 }
             }
 
             Column(horizontalAlignment = Alignment.End) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = ElectricMint.copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, ElectricMint.copy(alpha = 0.35f))
-                ) {
-                    Text(
-                        text = "+${item.charms} Charms",
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Black,
-                            fontSize = 12.sp
-                        ),
-                        color = ElectricMint
-                    )
-                }
+                BrutalBadge(
+                    text = "+${item.charms} CHARMS",
+                    containerColor = ElectricMint,
+                    contentColor = BrutalInkBlack
+                )
                 if (item.createdAt.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = item.createdAt.take(10),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = Color.White.copy(alpha = 0.4f)
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 10.sp
+                        ),
+                        color = brutal.textMuted
                     )
                 }
             }

@@ -63,6 +63,12 @@ class NotificationsViewModel(
     }
 
     fun markAsRead(notificationId: String) {
+        val current = _uiState.value
+        if (current is NotificationsUiState.Success) {
+            _uiState.value = NotificationsUiState.Success(
+                current.notifications.map { if (it.id == notificationId) it.copy(read = true) else it }
+            )
+        }
         viewModelScope.launch {
             notificationRepository.markAsRead(notificationId)
                 .onSuccess { loadNotifications() }
@@ -70,9 +76,22 @@ class NotificationsViewModel(
     }
 
     fun markAllAsRead() {
+        val current = _uiState.value
+        if (current is NotificationsUiState.Success) {
+            _uiState.value = NotificationsUiState.Success(
+                current.notifications.map { it.copy(read = true) }
+            )
+        }
         viewModelScope.launch {
             notificationRepository.markAllAsRead()
                 .onSuccess { loadNotifications() }
+        }
+    }
+
+    companion object {
+        fun countUnread(state: NotificationsUiState): Int = when (state) {
+            is NotificationsUiState.Success -> state.notifications.count { !it.read }
+            else -> 0
         }
     }
 }

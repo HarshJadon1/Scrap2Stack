@@ -36,17 +36,20 @@ import com.scrap2stack.app.core.ui.components.SkillChip
 import com.scrap2stack.app.core.ui.components.brutalCard
 import com.scrap2stack.app.core.ui.components.dotGridBackground
 import com.scrap2stack.app.core.ui.components.tactileBrutalCard
+import com.scrap2stack.app.domain.model.CharmContribution
 import com.scrap2stack.app.domain.model.Developer
+import com.scrap2stack.app.domain.service.ContributionVerificationEngine
 import com.scrap2stack.app.ui.theme.AmberGold
-import com.scrap2stack.app.ui.theme.BrutalBorderWhite
-import com.scrap2stack.app.ui.theme.BrutalCanvasDark
 import com.scrap2stack.app.ui.theme.BrutalInkBlack
 import com.scrap2stack.app.ui.theme.BrutalShadowBlack
-import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
-import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.NeonCyan
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
+import com.scrap2stack.app.ui.theme.brutalColors
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun ProfileScreen(
@@ -55,13 +58,14 @@ fun ProfileScreen(
     onNavigateToEditProfile: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val brutal = MaterialTheme.brutalColors
 
     LaunchedEffect(Unit) {
         viewModel.loadProfile()
     }
 
     Scaffold(
-        containerColor = BrutalCanvasDark
+        containerColor = brutal.canvas
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -82,6 +86,7 @@ fun ProfileScreen(
                 is ProfileUiState.Success -> {
                     ProfileContent(
                         developer = state.developer,
+                        contributions = state.contributions,
                         onNavigateToSettings = onNavigateToSettings,
                         onNavigateToEditProfile = onNavigateToEditProfile
                     )
@@ -92,11 +97,13 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileContent(
+internal fun ProfileContent(
     developer: Developer,
+    contributions: List<CharmContribution>,
     onNavigateToSettings: () -> Unit,
     onNavigateToEditProfile: () -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -111,8 +118,8 @@ private fun ProfileContent(
                 .fillMaxWidth()
                 .brutalCard(
                     cornerRadius = 18.dp,
-                    containerColor = BrutalSurfaceDark,
-                    borderColor = BrutalBorderWhite,
+                    containerColor = brutal.surface,
+                    borderColor = brutal.border,
                     borderWidth = 2.dp,
                     shadowColor = ElectricMint,
                     shadowOffsetX = 5.dp,
@@ -141,7 +148,7 @@ private fun ProfileContent(
                                     fontSize = 21.sp,
                                     letterSpacing = (-0.3).sp
                                 ),
-                                color = Color.White,
+                                color = brutal.textPrimary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f, fill = false)
@@ -180,7 +187,7 @@ private fun ProfileContent(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
                             ),
-                            color = ElectricMint
+                            color = brutal.accentOnSurface
                         )
                     }
 
@@ -218,7 +225,7 @@ private fun ProfileContent(
                         lineHeight = 20.sp,
                         fontSize = 14.sp
                     ),
-                    color = Color.White.copy(alpha = 0.85f)
+                    color = brutal.textPrimary.copy(alpha = 0.85f)
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -240,11 +247,11 @@ private fun ProfileContent(
             ProfileStatCard(
                 label = "CHARMS",
                 value = "${developer.charms} ★",
-                containerColor = BrutalSurfaceDark,
-                borderColor = BrutalBorderWhite,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
                 shadowColor = PrimaryIndigo,
-                labelColor = Color.White.copy(alpha = 0.65f),
-                valueColor = ElectricMint,
+                labelColor = brutal.textMuted,
+                valueColor = brutal.accentOnSurface,
                 modifier = Modifier.weight(1f)
             )
             ProfileStatCard(
@@ -259,10 +266,15 @@ private fun ProfileContent(
             )
         }
 
-        // Skills Section
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // 21-Day Revival Activity Heatmap
+        RevivalHeatmapCard(contributions = contributions)
+
+        // Bayesian Verified Skill Confidence
+        Spacer(modifier = Modifier.height(18.dp))
+        SectionHeader(title = "Skill Telemetry")
         if (developer.skills.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(20.dp))
-            SectionHeader(title = "Core Skills")
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -270,8 +282,32 @@ private fun ProfileContent(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 developer.skills.forEach { skill ->
-                    SkillChip(skill = skill)
+                    val metric = ContributionVerificationEngine.getSkillConfidence(developer, skill)
+                    SkillChip(skill = skill, isVerified = metric.isVerified)
                 }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            SkillConfidenceCard(developer = developer)
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .brutalCard(
+                        cornerRadius = 14.dp,
+                        containerColor = brutal.surface,
+                        borderColor = brutal.border,
+                        borderWidth = 2.dp,
+                        shadowColor = brutal.shadow,
+                        shadowOffsetX = 3.dp,
+                        shadowOffsetY = 3.dp
+                    )
+                    .padding(14.dp)
+            ) {
+                Text(
+                    text = "Add your tech stack in EDIT PROFILE → to track Bayesian verification confidence.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = brutal.textMuted
+                )
             }
         }
 
@@ -289,10 +325,10 @@ private fun ProfileContent(
                     Box(
                         modifier = Modifier.brutalCard(
                             cornerRadius = 10.dp,
-                            containerColor = BrutalSurfaceRaised,
-                            borderColor = BrutalBorderWhite.copy(alpha = 0.8f),
+                            containerColor = brutal.surfaceRaised,
+                            borderColor = brutal.border,
                             borderWidth = 1.5.dp,
-                            shadowColor = BrutalShadowBlack,
+                            shadowColor = brutal.shadow,
                             shadowOffsetX = 2.dp,
                             shadowOffsetY = 2.dp
                         )
@@ -305,7 +341,7 @@ private fun ProfileContent(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
                             ),
-                            color = Color.White
+                            color = brutal.textPrimary
                         )
                     }
                 }
@@ -348,7 +384,7 @@ private fun ProfileContent(
             Text(
                 text = "No links added yet. Tap 'EDIT PROFILE →' to add links.",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+                color = brutal.textMuted
             )
         }
 
@@ -357,14 +393,223 @@ private fun ProfileContent(
 }
 
 @Composable
+private fun RevivalHeatmapCard(contributions: List<CharmContribution>) {
+    val brutal = MaterialTheme.brutalColors
+    val levels = buildHeatmapLevels(contributions = contributions, days = 21)
+    val activeDays = levels.count { it > 0 }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .brutalCard(
+                cornerRadius = 16.dp,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = brutal.shadow,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
+            .padding(16.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "21-DAY REVIVAL HEATMAP",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 11.sp,
+                        letterSpacing = 0.6.sp
+                    ),
+                    color = brutal.textPrimary
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(ElectricMint)
+                        .border(1.5.dp, BrutalShadowBlack, RoundedCornerShape(6.dp))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = "$activeDays ACTIVE DAYS",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 9.sp
+                        ),
+                        color = BrutalInkBlack
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            levels.chunked(7).forEachIndexed { rowIdx, weekRow ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    weekRow.forEach { level ->
+                        val cellColor = when (level) {
+                            0 -> brutal.surfaceRaised
+                            1 -> ElectricMint.copy(alpha = 0.30f)
+                            2 -> ElectricMint.copy(alpha = 0.55f)
+                            3 -> ElectricMint.copy(alpha = 0.80f)
+                            else -> ElectricMint
+                        }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(cellColor)
+                                .border(1.5.dp, brutal.border.copy(alpha = if (level == 0) 0.45f else 0.9f), RoundedCornerShape(5.dp))
+                        )
+                    }
+                }
+                if (rowIdx < 2) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SkillConfidenceCard(developer: Developer) {
+    val brutal = MaterialTheme.brutalColors
+    val trackedSkills = developer.skills.take(4)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .brutalCard(
+                cornerRadius = 16.dp,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = PrimaryIndigo,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
+            .padding(16.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                text = "BAYESIAN VERIFICATION CONFIDENCE",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.6.sp
+                ),
+                color = brutal.textMuted
+            )
+
+            trackedSkills.forEach { skill ->
+                val metric = ContributionVerificationEngine.getSkillConfidence(developer, skill)
+                val percent = (metric.confidence * 100).toInt().coerceIn(5, 100)
+                val barColor = if (metric.isVerified) ElectricMint else PrimaryIndigo
+
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = skill,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = brutal.textPrimary
+                        )
+                        Text(
+                            text = "$percent% • ${metric.confidenceLevelLabel.uppercase()}",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            ),
+                            color = if (metric.isVerified) brutal.accentOnSurface else brutal.textMuted
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(brutal.surfaceRaised)
+                            .border(1.5.dp, brutal.border, RoundedCornerShape(5.dp))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(metric.confidence.toFloat().coerceIn(0.08f, 1f))
+                                .background(barColor)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Buckets the last [days] of charm contributions into 0..4 heatmap intensity levels.
+ */
+internal fun buildHeatmapLevels(
+    contributions: List<CharmContribution>,
+    days: Int = 21,
+    todayMillis: Long = System.currentTimeMillis()
+): List<Int> {
+    if (days <= 0) return emptyList()
+
+    val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }
+    val countsByDate = mutableMapOf<String, Int>()
+    contributions.forEach { entry ->
+        val dayKey = entry.createdAt.trim().take(10)
+        if (dayKey.length == 10 && dayKey[4] == '-' && dayKey[7] == '-') {
+            countsByDate[dayKey] = (countsByDate[dayKey] ?: 0) + 1
+        }
+    }
+
+    val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+        timeInMillis = todayMillis
+        add(Calendar.DAY_OF_YEAR, -(days - 1))
+    }
+
+    return List(days) {
+        val key = dateFormatter.format(calendar.time)
+        calendar.add(Calendar.DAY_OF_YEAR, 1)
+        when (val count = countsByDate[key] ?: 0) {
+            0 -> 0
+            1 -> 1
+            2 -> 2
+            in 3..4 -> 3
+            else -> 4
+        }
+    }
+}
+
+@Composable
 fun ProfileStatCard(
     label: String,
     value: String,
-    containerColor: Color = BrutalSurfaceDark,
-    borderColor: Color = BrutalBorderWhite,
+    containerColor: Color = MaterialTheme.brutalColors.surface,
+    borderColor: Color = MaterialTheme.brutalColors.border,
     shadowColor: Color = PrimaryIndigo,
-    labelColor: Color = Color.White.copy(alpha = 0.65f),
-    valueColor: Color = ElectricMint,
+    labelColor: Color = MaterialTheme.brutalColors.textMuted,
+    valueColor: Color = MaterialTheme.brutalColors.accentOnSurface,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -433,14 +678,15 @@ fun SocialLinkItem(
         }
     }
 
+    val brutal = MaterialTheme.brutalColors
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp)
             .tactileBrutalCard(
                 cornerRadius = 14.dp,
-                containerColor = BrutalSurfaceDark,
-                borderColor = BrutalBorderWhite,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
                 borderWidth = 2.dp,
                 shadowColor = accentColor,
                 shadowOffsetX = 4.dp,
@@ -484,7 +730,7 @@ fun SocialLinkItem(
                         fontSize = 10.sp,
                         letterSpacing = 0.6.sp
                     ),
-                    color = accentColor
+                    color = brutal.textMuted
                 )
                 Text(
                     text = displayHandle,
@@ -492,7 +738,7 @@ fun SocialLinkItem(
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     ),
-                    color = Color.White,
+                    color = brutal.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

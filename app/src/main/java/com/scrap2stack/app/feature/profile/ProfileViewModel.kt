@@ -2,10 +2,15 @@ package com.scrap2stack.app.feature.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.scrap2stack.app.data.repository.CharmsRepositoryImpl
+import com.scrap2stack.app.domain.model.CharmContribution
 import com.scrap2stack.app.domain.model.Developer
 import com.scrap2stack.app.domain.model.ExperienceLevel
+import com.scrap2stack.app.domain.repository.CharmsRepository
 import com.scrap2stack.app.domain.usecase.GetMyProfileUseCase
 import com.scrap2stack.app.domain.usecase.UpdateProfileUseCase
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +18,10 @@ import kotlinx.coroutines.launch
 
 sealed class ProfileUiState {
     object Loading : ProfileUiState()
-    data class Success(val developer: Developer) : ProfileUiState()
+    data class Success(
+        val developer: Developer,
+        val contributions: List<CharmContribution> = emptyList()
+    ) : ProfileUiState()
     data class Error(val message: String) : ProfileUiState()
 }
 
@@ -26,7 +34,8 @@ sealed class EditProfileUiState {
 
 class ProfileViewModel(
     private val getMyProfileUseCase: GetMyProfileUseCase,
-    private val updateProfileUseCase: UpdateProfileUseCase
+    private val updateProfileUseCase: UpdateProfileUseCase,
+    private val charmsRepository: CharmsRepository = CharmsRepositoryImpl()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
@@ -42,13 +51,25 @@ class ProfileViewModel(
     fun loadProfile() {
         viewModelScope.launch {
             _uiState.value = ProfileUiState.Loading
-            getMyProfileUseCase()
-                .onSuccess { developer ->
-                    _uiState.value = ProfileUiState.Success(developer)
+            try {
+                coroutineScope {
+                    val profileDeferred = async { getMyProfileUseCase() }
+                    val historyDeferred = async { charmsRepository.getContributionHistory() }
+
+                    val profileResult = profileDeferred.await()
+                    val history = historyDeferred.await().getOrDefault(emptyList())
+
+                    profileResult
+                        .onSuccess { developer ->
+                            _uiState.value = ProfileUiState.Success(developer, history)
+                        }
+                        .onFailure { error ->
+                            _uiState.value = ProfileUiState.Error(error.message ?: "Failed to load profile")
+                        }
                 }
-                .onFailure { error ->
-                    _uiState.value = ProfileUiState.Error(error.message ?: "Failed to load profile")
-                }
+            } catch (e: Exception) {
+                _uiState.value = ProfileUiState.Error(e.message ?: "Failed to load profile")
+            }
         }
     }
 
@@ -81,8 +102,9 @@ class ProfileViewModel(
 
             updateProfileUseCase(updatedDeveloper)
                 .onSuccess {
+                    val existingHistory = (uiState.value as? ProfileUiState.Success)?.contributions ?: emptyList()
                     _editUiState.value = EditProfileUiState.Success
-                    _uiState.value = ProfileUiState.Success(it)
+                    _uiState.value = ProfileUiState.Success(it, existingHistory)
                 }
                 .onFailure { error ->
                     _editUiState.value = EditProfileUiState.Error(error.message ?: "Failed to update profile")

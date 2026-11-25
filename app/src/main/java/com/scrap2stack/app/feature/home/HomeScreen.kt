@@ -39,18 +39,11 @@ import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.domain.model.Developer
 import com.scrap2stack.app.domain.model.Project
 import com.scrap2stack.app.ui.theme.AmberGold
-import com.scrap2stack.app.ui.theme.BrutalBorderWhite
-import com.scrap2stack.app.ui.theme.BrutalCanvasDark
 import com.scrap2stack.app.ui.theme.BrutalInkBlack
 import com.scrap2stack.app.ui.theme.BrutalShadowBlack
-import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
-import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
-import com.scrap2stack.app.ui.theme.NeonCyan
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
-import com.scrap2stack.app.ui.theme.PrimaryIndigoDark
-import com.scrap2stack.app.ui.theme.PrimaryIndigoLight
-import com.scrap2stack.app.ui.theme.RevivalEmerald
+import com.scrap2stack.app.ui.theme.brutalColors
 
 @Composable
 fun HomeScreen(
@@ -59,13 +52,14 @@ fun HomeScreen(
     onNavigateToCharms: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val brutal = MaterialTheme.brutalColors
 
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
     }
 
     Scaffold(
-        containerColor = BrutalCanvasDark,
+        containerColor = brutal.canvas,
         topBar = {
             val user = (uiState as? HomeUiState.Success)?.user
             HomeHeader(
@@ -95,10 +89,10 @@ fun HomeScreen(
                                 .height(130.dp)
                                 .brutalCard(
                                     cornerRadius = 16.dp,
-                                    containerColor = BrutalSurfaceDark,
-                                    borderColor = BrutalBorderWhite,
+                                    containerColor = brutal.surface,
+                                    borderColor = brutal.border,
                                     borderWidth = 2.dp,
-                                    shadowColor = BrutalShadowBlack
+                                    shadowColor = brutal.shadow
                                 )
                                 .shimmerEffect()
                         )
@@ -226,13 +220,14 @@ fun DeveloperPassCard(
     developerName: String,
     onClick: () -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .tactileBrutalCard(
                 cornerRadius = 18.dp,
-                containerColor = BrutalSurfaceDark,
-                borderColor = BrutalBorderWhite,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
                 borderWidth = 2.dp,
                 shadowColor = PrimaryIndigo,
                 shadowOffsetX = 5.dp,
@@ -297,7 +292,7 @@ fun DeveloperPassCard(
                                 fontWeight = FontWeight.Black,
                                 fontSize = 16.sp
                             ),
-                            color = Color.White
+                            color = brutal.textPrimary
                         )
                     }
                 }
@@ -349,7 +344,7 @@ fun DeveloperPassCard(
                 Text(
                     text = "Next Tier: Stack Master",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
-                    color = Color.White.copy(alpha = 0.72f)
+                    color = brutal.textMuted
                 )
                 Text(
                     text = "$charms / 200 CHARMS",
@@ -358,7 +353,7 @@ fun DeveloperPassCard(
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp
                     ),
-                    color = ElectricMint
+                    color = brutal.accentOnSurface
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -367,8 +362,8 @@ fun DeveloperPassCard(
                     .fillMaxWidth()
                     .height(10.dp)
                     .clip(RoundedCornerShape(5.dp))
-                    .background(BrutalSurfaceRaised)
-                    .border(1.5.dp, BrutalBorderWhite.copy(alpha = 0.8f), RoundedCornerShape(5.dp))
+                    .background(brutal.surfaceRaised)
+                    .border(1.5.dp, brutal.border, RoundedCornerShape(5.dp))
             ) {
                 val progress = (charms / 200f).coerceIn(0.05f, 1f)
                 Box(
@@ -387,13 +382,14 @@ fun RecommendedProjectCard(
     project: Project,
     onClick: () -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .tactileBrutalCard(
                 cornerRadius = 18.dp,
-                containerColor = BrutalSurfaceDark,
-                borderColor = BrutalBorderWhite,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
                 borderWidth = 2.dp,
                 shadowColor = ElectricMint,
                 shadowOffsetX = 5.dp,
@@ -477,7 +473,7 @@ fun RecommendedProjectCard(
                 ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = Color.White
+                color = brutal.textPrimary
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -487,7 +483,7 @@ fun RecommendedProjectCard(
                 style = MaterialTheme.typography.bodyMedium.copy(
                     lineHeight = 20.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
+                color = brutal.textPrimary.copy(alpha = 0.80f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -511,14 +507,15 @@ fun CompactProjectCard(
     project: Project,
     onClick: () -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     Box(
         modifier = Modifier
             .width(214.dp)
             .height(136.dp)
             .tactileBrutalCard(
                 cornerRadius = 16.dp,
-                containerColor = BrutalSurfaceDark,
-                borderColor = BrutalBorderWhite,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
                 borderWidth = 2.dp,
                 shadowColor = PrimaryIndigo,
                 shadowOffsetX = 4.dp,
@@ -540,7 +537,7 @@ fun CompactProjectCard(
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color.White
+                    color = brutal.textPrimary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -550,7 +547,7 @@ fun CompactProjectCard(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     ),
-                    color = ElectricMint,
+                    color = brutal.accentOnSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -568,7 +565,7 @@ fun CompactProjectCard(
                             fontWeight = FontWeight.Black,
                             fontSize = 18.sp
                         ),
-                        color = ElectricMint
+                        color = brutal.accentOnSurface
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -578,14 +575,14 @@ fun CompactProjectCard(
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = Color.White.copy(alpha = 0.6f)
+                        color = brutal.textMuted
                     )
                 }
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = Color.White
+                    tint = brutal.textPrimary
                 )
             }
         }
@@ -598,6 +595,7 @@ fun HomeHeader(
     onNavigateToCharms: () -> Unit,
     onRefresh: () -> Unit = {}
 ) {
+    val brutal = MaterialTheme.brutalColors
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -614,7 +612,7 @@ fun HomeHeader(
                     letterSpacing = 0.8.sp,
                     fontSize = 11.sp
                 ),
-                color = ElectricMint
+                color = brutal.accentOnSurface
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -624,7 +622,7 @@ fun HomeHeader(
                     fontSize = 22.sp,
                     letterSpacing = (-0.4).sp
                 ),
-                color = Color.White
+                color = brutal.textPrimary
             )
         }
 
@@ -634,8 +632,8 @@ fun HomeHeader(
                     .size(44.dp)
                     .tactileBrutalCard(
                         cornerRadius = 12.dp,
-                        containerColor = BrutalSurfaceRaised,
-                        borderColor = BrutalBorderWhite,
+                        containerColor = brutal.surfaceRaised,
+                        borderColor = brutal.border,
                         borderWidth = 2.dp,
                         shadowColor = ElectricMint,
                         shadowOffsetX = 3.dp,
@@ -647,7 +645,7 @@ fun HomeHeader(
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = "Refresh Feeds",
-                    tint = ElectricMint,
+                    tint = brutal.accentOnSurface,
                     modifier = Modifier.size(20.dp)
                 )
             }

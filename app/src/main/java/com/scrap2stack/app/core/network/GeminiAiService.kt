@@ -64,17 +64,22 @@ class GeminiAiService {
         taskTitle: String,
         skill: String,
         projectName: String
-    ): Result<String> = withContext(Dispatchers.IO) {
+    ): Result<LiveDataResult<String>> = withContext(Dispatchers.IO) {
         val apiKey = GeminiConfig.GEMINI_API_KEY
+        val offlineTemplate = "// Offline Heuristic Solution for: $taskTitle\n" +
+            "// Target Skill: $skill\n\n" +
+            "fun executeTaskSolution() {\n" +
+            "    // 1. Verify project architecture for $projectName\n" +
+            "    // 2. Implement modular feature workflow\n" +
+            "    // 3. Bind reactive state flows to Compose UI\n" +
+            "}"
         if (apiKey.isBlank()) {
             return@withContext Result.success(
-                "// ScrapAI Solution Suggestion for: $taskTitle\n" +
-                "// Target Skill: $skill\n\n" +
-                "fun executeTaskSolution() {\n" +
-                "    // 1. Verify project architecture for $projectName\n" +
-                "    // 2. Implement modular feature workflow\n" +
-                "    // 3. Bind reactive state flows to Compose UI\n" +
-                "}"
+                LiveDataResult(
+                    data = offlineTemplate,
+                    isLiveData = false,
+                    statusNote = "Gemini API key not configured"
+                )
             )
         }
 
@@ -103,22 +108,46 @@ class GeminiAiService {
                 val geminiResp: GeminiResponse = response.body()
                 val text = geminiResp.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
                 if (!text.isNullOrBlank()) {
-                    Result.success(text)
+                    Result.success(LiveDataResult(data = text, isLiveData = true))
                 } else {
-                    Result.failure(Exception("Gemini returned empty text"))
+                    Result.success(
+                        LiveDataResult(
+                            data = offlineTemplate,
+                            isLiveData = false,
+                            statusNote = "Empty Gemini response — showing local heuristic"
+                        )
+                    )
                 }
             } else {
-                Result.failure(Exception("Gemini API HTTP Error ${response.status.value}"))
+                Result.success(
+                    LiveDataResult(
+                        data = offlineTemplate,
+                        isLiveData = false,
+                        statusNote = "Gemini HTTP ${response.status.value} — showing local heuristic"
+                    )
+                )
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.success(
+                LiveDataResult(
+                    data = offlineTemplate,
+                    isLiveData = false,
+                    statusNote = "Offline — showing local heuristic"
+                )
+            )
         }
     }
 
-    suspend fun auditProjectWithGemini(project: Project): Result<AnalysisDto> = withContext(Dispatchers.IO) {
+    suspend fun auditProjectWithGemini(project: Project): Result<LiveDataResult<AnalysisDto>> = withContext(Dispatchers.IO) {
         val apiKey = GeminiConfig.GEMINI_API_KEY
         if (apiKey.isBlank()) {
-            return@withContext Result.success(ScrapAIEngine.generateAnalysis(project))
+            return@withContext Result.success(
+                LiveDataResult(
+                    data = ScrapAIEngine.generateAnalysis(project),
+                    isLiveData = false,
+                    statusNote = "Gemini API key not configured"
+                )
+            )
         }
 
         try {
@@ -150,15 +179,15 @@ class GeminiAiService {
                 if (!text.isNullOrBlank()) {
                     val jsonString = text.removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
                     val parsedDto = json.decodeFromString<AnalysisDto>(jsonString)
-                    Result.success(parsedDto)
+                    Result.success(LiveDataResult(data = parsedDto, isLiveData = true))
                 } else {
-                    Result.success(ScrapAIEngine.generateAnalysis(project))
+                    Result.success(LiveDataResult(ScrapAIEngine.generateAnalysis(project), false, "Empty Gemini response"))
                 }
             } else {
-                Result.success(ScrapAIEngine.generateAnalysis(project))
+                Result.success(LiveDataResult(ScrapAIEngine.generateAnalysis(project), false, "Gemini HTTP ${response.status.value}"))
             }
         } catch (e: Exception) {
-            Result.success(ScrapAIEngine.generateAnalysis(project))
+            Result.success(LiveDataResult(ScrapAIEngine.generateAnalysis(project), false, "Offline heuristic audit"))
         }
     }
 
@@ -166,7 +195,7 @@ class GeminiAiService {
         projectName: String,
         techStack: List<String>,
         problem: String
-    ): Result<List<RoadmapItem>> = withContext(Dispatchers.IO) {
+    ): Result<LiveDataResult<List<RoadmapItem>>> = withContext(Dispatchers.IO) {
         val apiKey = GeminiConfig.GEMINI_API_KEY
         val fallbackItems = listOf(
             RoadmapItem(
@@ -212,7 +241,13 @@ class GeminiAiService {
         )
 
         if (apiKey.isBlank()) {
-            return@withContext Result.success(fallbackItems)
+            return@withContext Result.success(
+                LiveDataResult(
+                    data = fallbackItems,
+                    isLiveData = false,
+                    statusNote = "Offline heuristic plan (no Gemini API key set)"
+                )
+            )
         }
 
         try {
@@ -260,18 +295,18 @@ class GeminiAiService {
                                 milestone = index == 3
                             )
                         }
-                        Result.success(parsedItems)
+                        Result.success(LiveDataResult(data = parsedItems, isLiveData = true))
                     } else {
-                        Result.success(fallbackItems)
+                        Result.success(LiveDataResult(fallbackItems, false, "Gemini returned non-array payload"))
                     }
                 } else {
-                    Result.success(fallbackItems)
+                    Result.success(LiveDataResult(fallbackItems, false, "Empty Gemini response"))
                 }
             } else {
-                Result.success(fallbackItems)
+                Result.success(LiveDataResult(fallbackItems, false, "Gemini HTTP ${response.status.value}"))
             }
         } catch (e: Exception) {
-            Result.success(fallbackItems)
+            Result.success(LiveDataResult(fallbackItems, false, "Offline heuristic plan"))
         }
     }
 }

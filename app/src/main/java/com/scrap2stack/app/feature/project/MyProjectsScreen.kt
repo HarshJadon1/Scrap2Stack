@@ -22,13 +22,11 @@ import com.scrap2stack.app.core.ui.components.ProjectCard
 import com.scrap2stack.app.core.ui.components.SectionHeader
 import com.scrap2stack.app.core.ui.components.dotGridBackground
 import com.scrap2stack.app.core.ui.components.tactileBrutalCard
-import com.scrap2stack.app.ui.theme.BrutalBorderWhite
-import com.scrap2stack.app.ui.theme.BrutalCanvasDark
 import com.scrap2stack.app.ui.theme.BrutalInkBlack
 import com.scrap2stack.app.ui.theme.BrutalShadowBlack
-import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
+import com.scrap2stack.app.ui.theme.brutalColors
 
 @Composable
 fun MyProjectsScreen(
@@ -38,6 +36,7 @@ fun MyProjectsScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Created", "Joined", "Saved", "Completed")
+    val brutal = MaterialTheme.brutalColors
 
     LaunchedEffect(Unit) {
         viewModel.loadMyProjects()
@@ -46,7 +45,7 @@ fun MyProjectsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrutalCanvasDark)
+            .background(brutal.canvas)
             .dotGridBackground()
             .padding(horizontal = 20.dp)
     ) {
@@ -65,10 +64,10 @@ fun MyProjectsScreen(
                     modifier = Modifier
                         .tactileBrutalCard(
                             cornerRadius = 10.dp,
-                            containerColor = if (isSelected) ElectricMint else BrutalSurfaceRaised,
-                            borderColor = if (isSelected) BrutalShadowBlack else BrutalBorderWhite.copy(alpha = 0.8f),
+                            containerColor = if (isSelected) ElectricMint else brutal.surfaceRaised,
+                            borderColor = if (isSelected) BrutalShadowBlack else brutal.border,
                             borderWidth = 1.5.dp,
-                            shadowColor = if (isSelected) PrimaryIndigo else BrutalShadowBlack,
+                            shadowColor = if (isSelected) PrimaryIndigo else brutal.shadow,
                             shadowOffsetX = 3.dp,
                             shadowOffsetY = 3.dp,
                             onClick = { selectedTab = index }
@@ -83,7 +82,7 @@ fun MyProjectsScreen(
                             fontWeight = FontWeight.Black,
                             fontSize = 11.sp
                         ),
-                        color = if (isSelected) BrutalInkBlack else Color.White
+                        color = if (isSelected) BrutalInkBlack else brutal.textPrimary
                     )
                 }
             }

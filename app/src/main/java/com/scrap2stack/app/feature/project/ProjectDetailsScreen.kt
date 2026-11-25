@@ -1,12 +1,14 @@
 package com.scrap2stack.app.feature.project
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
@@ -17,7 +19,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -25,16 +26,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.domain.model.Project
 import com.scrap2stack.app.domain.model.ProjectAnalysis
 import com.scrap2stack.app.domain.model.ProjectStatus
 import com.scrap2stack.app.domain.service.ScrapAIEngine
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.ElectricMint
+import com.scrap2stack.app.ui.theme.PrimaryIndigo
 import com.scrap2stack.app.ui.theme.StatusAbandoned
 import com.scrap2stack.app.ui.theme.StatusCompleted
 import com.scrap2stack.app.ui.theme.StatusReviving
+import com.scrap2stack.app.ui.theme.brutalColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +54,7 @@ fun ProjectDetailsScreen(
     onNavigateToMatches: () -> Unit,
     onNavigateToWorkspace: () -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     val uiState by viewModel.uiState.collectAsState()
     val analysisState by viewModel.analysisState.collectAsState()
 
@@ -65,7 +74,10 @@ fun ProjectDetailsScreen(
     if (showDeleteDialog && successState != null) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Project?") },
+            containerColor = brutal.surface,
+            titleContentColor = brutal.textPrimary,
+            textContentColor = brutal.textMuted,
+            title = { Text("Delete Project?", fontWeight = FontWeight.Black) },
             text = { Text("Are you sure you want to delete '${successState.project.name}'? This action cannot be undone.") },
             confirmButton = {
                 TextButton(
@@ -73,14 +85,14 @@ fun ProjectDetailsScreen(
                         showDeleteDialog = false
                         viewModel.deleteProject(projectId)
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.textButtonColors(contentColor = StatusAbandoned)
                 ) {
-                    Text("Delete", fontWeight = FontWeight.Bold)
+                    Text("Delete", fontWeight = FontWeight.Black)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text("Cancel", color = brutal.textPrimary)
                 }
             }
         )
@@ -98,44 +110,77 @@ fun ProjectDetailsScreen(
     }
 
     Scaffold(
+        containerColor = brutal.canvas,
         topBar = {
-            TopAppBar(
-                title = { Text("Project Details") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
+            BrutalTopBar(
+                tag = "PROJECT // DOSSIER",
+                title = "Project Details",
+                onNavigateBack = onNavigateBack,
                 actions = {
                     if (successState != null) {
-                        IconButton(onClick = { viewModel.toggleSave(projectId) }) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .tactileBrutalCard(
+                                    cornerRadius = 10.dp,
+                                    containerColor = if (isSaved) ElectricMint else brutal.surfaceRaised,
+                                    borderColor = brutal.border,
+                                    borderWidth = 2.dp,
+                                    shadowColor = brutal.shadow,
+                                    shadowOffsetX = 3.dp,
+                                    shadowOffsetY = 3.dp,
+                                    onClick = { viewModel.toggleSave(projectId) }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
                                 imageVector = if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                                 contentDescription = if (isSaved) "Unsave Project" else "Save Project",
-                                tint = if (isSaved) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                tint = if (isSaved) BrutalInkBlack else brutal.textPrimary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
 
                         if (isOwner) {
                             Box {
-                                IconButton(onClick = { showMenu = true }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = "More Options")
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .tactileBrutalCard(
+                                            cornerRadius = 10.dp,
+                                            containerColor = brutal.surfaceRaised,
+                                            borderColor = brutal.border,
+                                            borderWidth = 2.dp,
+                                            shadowColor = brutal.shadow,
+                                            shadowOffsetX = 3.dp,
+                                            shadowOffsetY = 3.dp,
+                                            onClick = { showMenu = true }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.MoreVert,
+                                        contentDescription = "More Options",
+                                        tint = brutal.textPrimary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
                                 DropdownMenu(
                                     expanded = showMenu,
-                                    onDismissRequest = { showMenu = false }
+                                    onDismissRequest = { showMenu = false },
+                                    containerColor = brutal.surface
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("Edit Project") },
-                                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                                        text = { Text("Edit Project", color = brutal.textPrimary, fontWeight = FontWeight.Bold) },
+                                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = brutal.accentOnSurface) },
                                         onClick = {
                                             showMenu = false
                                             showEditDialog = true
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Delete Project", color = MaterialTheme.colorScheme.error) },
-                                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                        text = { Text("Delete Project", color = StatusAbandoned, fontWeight = FontWeight.Bold) },
+                                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = StatusAbandoned) },
                                         onClick = {
                                             showMenu = false
                                             showDeleteDialog = true
@@ -149,30 +194,35 @@ fun ProjectDetailsScreen(
             )
         }
     ) { innerPadding ->
-        when (val state = uiState) {
-            is ProjectDetailsState.Loading -> {
-                LoadingView(modifier = Modifier.padding(innerPadding))
-            }
-            is ProjectDetailsState.Error -> {
-                ErrorView(
-                    message = state.message,
-                    onRetry = { viewModel.loadProjectDetails(projectId) },
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
-            is ProjectDetailsState.Success -> {
-                ProjectDetailsContent(
-                    project = state.project,
-                    analysis = (analysisState as? ProjectAnalysisState.Success)?.analysis,
-                    innerPadding = innerPadding,
-                    onNavigateToScrapAI = onNavigateToScrapAI,
-                    onNavigateToMatches = onNavigateToMatches,
-                    onNavigateToWorkspace = onNavigateToWorkspace
-                )
-            }
-            is ProjectDetailsState.Deleted -> {
-                LaunchedEffect(Unit) {
-                    onNavigateBack()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .dotGridBackground()
+        ) {
+            when (val state = uiState) {
+                is ProjectDetailsState.Loading -> {
+                    LoadingView()
+                }
+                is ProjectDetailsState.Error -> {
+                    ErrorView(
+                        message = state.message,
+                        onRetry = { viewModel.loadProjectDetails(projectId) }
+                    )
+                }
+                is ProjectDetailsState.Success -> {
+                    ProjectDetailsContent(
+                        project = state.project,
+                        analysis = (analysisState as? ProjectAnalysisState.Success)?.analysis,
+                        onNavigateToScrapAI = onNavigateToScrapAI,
+                        onNavigateToMatches = onNavigateToMatches,
+                        onNavigateToWorkspace = onNavigateToWorkspace
+                    )
+                }
+                is ProjectDetailsState.Deleted -> {
+                    LaunchedEffect(Unit) {
+                        onNavigateBack()
+                    }
                 }
             }
         }
@@ -184,46 +234,67 @@ fun ProjectDetailsScreen(
 private fun ProjectDetailsContent(
     project: Project,
     analysis: ProjectAnalysis?,
-    innerPadding: PaddingValues,
     onNavigateToScrapAI: () -> Unit,
     onNavigateToMatches: () -> Unit,
     onNavigateToWorkspace: () -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 20.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Spacer(modifier = Modifier.height(8.dp))
+        // Header Card
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .brutalCard(
+                    cornerRadius = 16.dp,
+                    containerColor = brutal.surface,
+                    borderColor = brutal.border,
+                    borderWidth = 2.dp,
+                    shadowColor = brutal.shadow,
+                    shadowOffsetX = 4.dp,
+                    shadowOffsetY = 4.dp
+                )
+                .padding(16.dp)
         ) {
-            Text(
-                text = project.name,
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier.weight(1f)
-            )
-            
-            val statusColor = when (project.status.name) {
-                "ABANDONED" -> StatusAbandoned
-                "REVIVING" -> StatusReviving
-                "COMPLETED" -> StatusCompleted
-                else -> Color.Gray
-            }
-            StatusChip(status = project.status.name, color = statusColor)
-        }
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = project.name,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                        color = brutal.textPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    val statusColor = when (project.status.name) {
+                        "ABANDONED" -> StatusAbandoned
+                        "REVIVING" -> StatusReviving
+                        "COMPLETED" -> StatusCompleted
+                        else -> Color.Gray
+                    }
+                    StatusChip(status = project.status.name, color = statusColor)
+                }
 
-        if (project.technologies.isNotEmpty()) {
-            Text(
-                text = project.technologies.joinToString(" • "),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+                if (project.technologies.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = project.technologies.joinToString(" • "),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = brutal.accentOnSurface
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -241,62 +312,109 @@ private fun ProjectDetailsContent(
             ScoreCard(label = "Revival Potential", score = "${displayScore}%", modifier = Modifier.weight(1f))
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // AI Insights Section
         if (analysis != null && analysis.recommendations.isNotEmpty()) {
             AIInsightsSection(analysis)
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
         }
 
         // Overview
-        Text("Overview", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-        Text(
-            text = project.description,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
+        SectionHeader(title = "Overview")
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .brutalCard(
+                    cornerRadius = 14.dp,
+                    containerColor = brutal.surface,
+                    borderColor = brutal.border,
+                    borderWidth = 2.dp,
+                    shadowColor = brutal.shadow,
+                    shadowOffsetX = 3.dp,
+                    shadowOffsetY = 3.dp
+                )
+                .padding(16.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = project.description,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = brutal.textPrimary
+                )
 
-        if (project.problem.isNotBlank()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Why was it abandoned?", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            Text(
-                text = project.problem,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
+                if (project.problem.isNotBlank()) {
+                    HorizontalDivider(color = brutal.border.copy(alpha = 0.25f))
+                    BrutalHeaderTag(text = "WHY WAS IT ABANDONED?")
+                    Text(
+                        text = project.problem,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = brutal.textMuted
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // AI Analysis Teaser
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f),
-            onClick = onNavigateToScrapAI
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .tactileBrutalCard(
+                    cornerRadius = 16.dp,
+                    containerColor = brutal.surfaceRaised,
+                    borderColor = brutal.border,
+                    borderWidth = 2.dp,
+                    shadowColor = PrimaryIndigo,
+                    shadowOffsetX = 4.dp,
+                    shadowOffsetY = 4.dp,
+                    onClick = onNavigateToScrapAI
+                )
+                .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(16.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .brutalCard(
+                            cornerRadius = 10.dp,
+                            containerColor = ElectricMint,
+                            borderColor = brutal.border,
+                            borderWidth = 1.5.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 2.dp,
+                            shadowOffsetY = 2.dp
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = BrutalInkBlack)
+                }
+                Spacer(modifier = Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("ScrapAI Deep Audit", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                    Text("View technical risks, required skills, and roadmap.", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "ScrapAI Deep Audit",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
+                        color = brutal.textPrimary
+                    )
+                    Text(
+                        "View technical risks, required skills, and roadmap.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = brutal.textMuted
+                    )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Required Skills
         if (project.requiredSkills.isNotEmpty()) {
-            Text("Required Skills", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            SectionHeader(title = "Required Skills")
             Row(
-                modifier = Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 project.requiredSkills.forEach { skill ->
@@ -305,11 +423,11 @@ private fun ProjectDetailsContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Primary Workflow CTA: Open Workspace
         Scrap2StackButton(
-            text = "🚀 Enter Project Workspace",
+            text = "🚀 ENTER PROJECT WORKSPACE",
             onClick = onNavigateToWorkspace
         )
 
@@ -319,29 +437,55 @@ private fun ProjectDetailsContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            OutlinedButton(
-                onClick = onNavigateToMatches,
-                modifier = Modifier.weight(1f),
-                shape = MaterialTheme.shapes.medium
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .tactileBrutalCard(
+                        cornerRadius = 12.dp,
+                        containerColor = brutal.surface,
+                        borderColor = brutal.border,
+                        borderWidth = 2.dp,
+                        shadowColor = brutal.shadow,
+                        shadowOffsetX = 3.dp,
+                        shadowOffsetY = 3.dp,
+                        onClick = onNavigateToMatches
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Find Matches", style = MaterialTheme.typography.labelMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(16.dp), tint = brutal.accentOnSurface)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Find Matches", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Black), color = brutal.textPrimary)
+                }
             }
 
-            OutlinedButton(
-                onClick = onNavigateToScrapAI,
-                modifier = Modifier.weight(1f),
-                shape = MaterialTheme.shapes.medium
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .tactileBrutalCard(
+                        cornerRadius = 12.dp,
+                        containerColor = brutal.surface,
+                        borderColor = brutal.border,
+                        borderWidth = 2.dp,
+                        shadowColor = brutal.shadow,
+                        shadowOffsetX = 3.dp,
+                        shadowOffsetY = 3.dp,
+                        onClick = onNavigateToScrapAI
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("AI Roadmap", style = MaterialTheme.typography.labelMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp), tint = PrimaryIndigo)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("AI Roadmap", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Black), color = brutal.textPrimary)
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         if (project.githubUrl.isNotBlank()) {
             val uriHandler = LocalUriHandler.current
             TextButton(
@@ -355,16 +499,15 @@ private fun ProjectDetailsContent(
                         }
                         try {
                             uriHandler.openUri(formattedUrl)
-                        } catch (e: Exception) {
-                            // Ignore error
+                        } catch (_: Exception) {
                         }
                     }
                 },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Icon(Icons.Default.Code, contentDescription = null)
+                Icon(Icons.Default.Code, contentDescription = null, tint = brutal.accentOnSurface)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("View on GitHub")
+                Text("View on GitHub", fontWeight = FontWeight.Bold, color = brutal.accentOnSurface)
             }
         }
 
@@ -374,40 +517,49 @@ private fun ProjectDetailsContent(
 
 @Composable
 fun AIInsightsSection(analysis: ProjectAnalysis) {
+    val brutal = MaterialTheme.brutalColors
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.1f),
-                shape = MaterialTheme.shapes.medium
+            .brutalCard(
+                cornerRadius = 14.dp,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = ElectricMint,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
             )
             .padding(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Default.Psychology, 
-                contentDescription = null, 
-                tint = MaterialTheme.colorScheme.tertiary,
+                Icons.Default.Psychology,
+                contentDescription = null,
+                tint = brutal.accentOnSurface,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                "ScrapAI recommends...", 
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.tertiary
+                "SCRAPAI RECOMMENDS...",
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Black
+                ),
+                color = brutal.accentOnSurface
             )
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         analysis.recommendations.take(3).forEach { step ->
             Row(modifier = Modifier.padding(vertical = 4.dp)) {
                 Icon(
-                    Icons.Default.Info, 
-                    contentDescription = null, 
+                    Icons.Default.Info,
+                    contentDescription = null,
                     modifier = Modifier.size(14.dp).padding(top = 2.dp),
-                    tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.7f)
+                    tint = brutal.accentOnSurface
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = step, style = MaterialTheme.typography.bodySmall)
+                Text(text = step, style = MaterialTheme.typography.bodySmall, color = brutal.textPrimary)
             }
         }
     }
@@ -419,6 +571,8 @@ fun EditProjectDialog(
     onDismiss: () -> Unit,
     onConfirm: (Project) -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
+    val fieldColors = brutalTextFieldColors()
     var name by remember { mutableStateOf(project.name) }
     var description by remember { mutableStateOf(project.description) }
     var problem by remember { mutableStateOf(project.problem) }
@@ -430,7 +584,9 @@ fun EditProjectDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Project", fontWeight = FontWeight.Bold) },
+        containerColor = brutal.surface,
+        titleContentColor = brutal.textPrimary,
+        title = { Text("Edit Project", fontWeight = FontWeight.Black) },
         text = {
             Column(
                 modifier = Modifier
@@ -443,7 +599,8 @@ fun EditProjectDialog(
                     onValueChange = { name = it },
                     label = { Text("Project Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = fieldColors
                 )
 
                 OutlinedTextField(
@@ -451,7 +608,8 @@ fun EditProjectDialog(
                     onValueChange = { description = it },
                     label = { Text("Short Description") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
+                    minLines = 2,
+                    colors = fieldColors
                 )
 
                 OutlinedTextField(
@@ -459,24 +617,27 @@ fun EditProjectDialog(
                     onValueChange = { problem = it },
                     label = { Text("Why was it abandoned?") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
+                    minLines = 2,
+                    colors = fieldColors
                 )
 
                 OutlinedTextField(
                     value = technologies,
                     onValueChange = { technologies = it },
                     label = { Text("Technologies (Comma separated)") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = fieldColors
                 )
 
                 OutlinedTextField(
                     value = skills,
                     onValueChange = { skills = it },
                     label = { Text("Required Skills (Comma separated)") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = fieldColors
                 )
 
-                Text("Category", style = MaterialTheme.typography.titleSmall)
+                BrutalHeaderTag(text = "CATEGORY")
                 val categoryOptions = remember(project.category) {
                     (listOf("Web", "Mobile", "AI/ML", "DevOps", "Cloud", "Open Source") + project.category).distinct().filter { it.isNotBlank() }
                 }
@@ -487,15 +648,31 @@ fun EditProjectDialog(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     categoryOptions.forEach { cat ->
-                        FilterChip(
-                            selected = category == cat,
-                            onClick = { category = cat },
-                            label = { Text(cat, style = MaterialTheme.typography.bodySmall) }
-                        )
+                        val selected = category == cat
+                        Box(
+                            modifier = Modifier
+                                .tactileBrutalCard(
+                                    cornerRadius = 10.dp,
+                                    containerColor = if (selected) ElectricMint else brutal.surfaceRaised,
+                                    borderColor = brutal.border,
+                                    borderWidth = 1.5.dp,
+                                    shadowColor = brutal.shadow,
+                                    shadowOffsetX = 2.dp,
+                                    shadowOffsetY = 2.dp,
+                                    onClick = { category = cat }
+                                )
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                cat,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = if (selected) BrutalInkBlack else brutal.textPrimary
+                            )
+                        }
                     }
                 }
 
-                Text("Project Status", style = MaterialTheme.typography.titleSmall)
+                BrutalHeaderTag(text = "PROJECT STATUS")
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -503,11 +680,30 @@ fun EditProjectDialog(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     ProjectStatus.entries.forEach { st ->
-                        FilterChip(
-                            selected = status == st,
-                            onClick = { status = st },
-                            label = { Text(st.name, style = MaterialTheme.typography.bodySmall) }
-                        )
+                        val selected = status == st
+                        Box(
+                            modifier = Modifier
+                                .tactileBrutalCard(
+                                    cornerRadius = 10.dp,
+                                    containerColor = if (selected) ElectricMint else brutal.surfaceRaised,
+                                    borderColor = brutal.border,
+                                    borderWidth = 1.5.dp,
+                                    shadowColor = brutal.shadow,
+                                    shadowOffsetX = 2.dp,
+                                    shadowOffsetY = 2.dp,
+                                    onClick = { status = st }
+                                )
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                st.name,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = if (selected) BrutalInkBlack else brutal.textPrimary
+                            )
+                        }
                     }
                 }
 
@@ -516,12 +712,13 @@ fun EditProjectDialog(
                     onValueChange = { githubUrl = it },
                     label = { Text("GitHub URL") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = fieldColors
                 )
             }
         },
         confirmButton = {
-            Button(
+            TextButton(
                 onClick = {
                     val techList = technologies.split(",").map { it.trim() }.filter { it.isNotBlank() }
                     val skillList = skills.split(",").map { it.trim() }.filter { it.isNotBlank() }
@@ -539,12 +736,12 @@ fun EditProjectDialog(
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("Save Changes")
+                Text("Save Changes", fontWeight = FontWeight.Black, color = brutal.accentOnSurface)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Cancel", color = brutal.textMuted)
             }
         }
     )

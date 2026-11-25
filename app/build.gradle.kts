@@ -1,8 +1,20 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+val geminiApiKey = (localProperties.getProperty("GEMINI_API_KEY") ?: "")
+    .replace("\\", "\\\\")
+    .replace("\"", "\\\"")
 
 android {
     namespace = "com.scrap2stack.app"
@@ -15,12 +27,15 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -33,6 +48,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -50,7 +66,7 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
     
-    // Networking (Supabase & Ktor & Retrofit)
+    // Networking (Supabase & Ktor)
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.auth)
     implementation(libs.supabase.postgrest)
@@ -60,10 +76,6 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
-
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
-    implementation(libs.okhttp.logging)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

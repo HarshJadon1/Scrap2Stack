@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -41,23 +42,27 @@ import com.scrap2stack.app.core.ui.components.InAppAlert
 import com.scrap2stack.app.core.ui.components.InAppNotificationBanner
 import com.scrap2stack.app.core.ui.components.brutalCard
 import com.scrap2stack.app.core.ui.components.tactileBrutalCard
+import com.scrap2stack.app.data.local.UserPreferences
+import com.scrap2stack.app.data.local.UserPreferencesRepository
+import com.scrap2stack.app.domain.model.CollaborationStatus
 import com.scrap2stack.app.feature.discovery.DiscoveryScreen
 import com.scrap2stack.app.feature.discovery.DiscoveryViewModel
 import com.scrap2stack.app.feature.home.HomeScreen
 import com.scrap2stack.app.feature.home.HomeViewModel
 import com.scrap2stack.app.feature.matching.CollaborationViewModel
+import com.scrap2stack.app.feature.matching.RequestsUiState
 import com.scrap2stack.app.feature.notifications.NotificationsScreen
+import com.scrap2stack.app.feature.notifications.NotificationsUiState
 import com.scrap2stack.app.feature.notifications.NotificationsViewModel
 import com.scrap2stack.app.feature.profile.ProfileScreen
 import com.scrap2stack.app.feature.profile.ProfileViewModel
 import com.scrap2stack.app.feature.project.MyProjectsScreen
 import com.scrap2stack.app.feature.project.MyProjectsViewModel
-import com.scrap2stack.app.ui.theme.BrutalBorderWhite
 import com.scrap2stack.app.ui.theme.BrutalInkBlack
 import com.scrap2stack.app.ui.theme.BrutalShadowBlack
-import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
+import com.scrap2stack.app.ui.theme.brutalColors
 
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
     object Home : BottomNavItem(Screen.Home.route, Icons.Default.Home, "Home")
@@ -84,6 +89,18 @@ fun MainScreen(
     notificationsViewModel: NotificationsViewModel
 ) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val preferencesRepository = remember(context) { UserPreferencesRepository(context) }
+    val userPreferences by preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
+
+    val requestsState by collaborationViewModel.requestsState.collectAsState()
+    val notificationsState by notificationsViewModel.uiState.collectAsState()
+
+    val pendingRequestsCount = (requestsState as? RequestsUiState.Success)
+        ?.received?.count { it.status == CollaborationStatus.PENDING } ?: 0
+    val unreadNotificationsCount = NotificationsViewModel.countUnread(notificationsState)
+    val alertsBadgeCount = pendingRequestsCount + unreadNotificationsCount
+
     val items = listOf(
         BottomNavItem.Home,
         BottomNavItem.Discover,
@@ -93,15 +110,61 @@ fun MainScreen(
     )
 
     var activeAlert by remember { mutableStateOf<InAppAlert?>(null) }
+    var lastAlertKey by remember { mutableStateOf<String?>(null) }
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    LaunchedEffect(Unit) {
+        collaborationViewModel.loadRequests()
+        notificationsViewModel.loadNotifications()
+    }
+
+    LaunchedEffect(requestsState, notificationsState, userPreferences.isPushNotificationsEnabled, currentRoute) {
+        if (!userPreferences.isPushNotificationsEnabled || currentRoute == Screen.Notifications.route) {
+            return@LaunchedEffect
+        }
+        val latestUnread = (notificationsState as? NotificationsUiState.Success)
+            ?.notifications?.firstOrNull { !it.read }
+        val latestPendingRequest = (requestsState as? RequestsUiState.Success)
+            ?.received?.firstOrNull { it.status == CollaborationStatus.PENDING }
+
+        when {
+            latestUnread != null -> {
+                val key = "notif-${latestUnread.id}"
+                if (key != lastAlertKey) {
+                    lastAlertKey = key
+                    activeAlert = InAppAlert(
+                        id = key,
+                        title = latestUnread.title,
+                        message = latestUnread.content
+                    )
+                }
+            }
+            latestPendingRequest != null -> {
+                val key = "collab-${latestPendingRequest.id}"
+                if (key != lastAlertKey) {
+                    lastAlertKey = key
+                    val senderName = latestPendingRequest.sender?.name?.ifBlank { null } ?: "Collaborator"
+                    val projectName = latestPendingRequest.project?.name?.ifBlank { null } ?: "a project"
+                    activeAlert = InAppAlert(
+                        id = key,
+                        title = "New Collaboration Invite",
+                        message = "$senderName invited you to $projectName"
+                    )
+                }
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
         bottomBar = {
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
 
             FloatingBottomNavBar(
                 items = items,
+                alertsBadgeCount = alertsBadgeCount,
                 currentRouteChecker = { route ->
                     currentDestination?.hierarchy?.any { it.route == route } == true
                 },
@@ -120,12 +183,13 @@ fun MainScreen(
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
             if (currentRoute == Screen.Home.route || currentRoute == Screen.MyProjects.route) {
+                val brutal = MaterialTheme.brutalColors
                 Box(
                     modifier = Modifier
                         .tactileBrutalCard(
                             cornerRadius = 14.dp,
                             containerColor = PrimaryIndigo,
-                            borderColor = BrutalBorderWhite,
+                            borderColor = brutal.border,
                             borderWidth = 2.dp,
                             shadowColor = ElectricMint,
                             shadowOffsetX = 4.dp,
@@ -216,8 +280,9 @@ fun MainScreen(
  * Neo-Brutalist Stack Pop keycap bottom navigation dock with equal-width slots and inset safety.
  */
 @Composable
-private fun FloatingBottomNavBar(
+internal fun FloatingBottomNavBar(
     items: List<BottomNavItem>,
+    alertsBadgeCount: Int = 0,
     currentRouteChecker: (String) -> Boolean,
     onSelectItem: (BottomNavItem) -> Unit
 ) {
@@ -234,16 +299,17 @@ private fun FloatingBottomNavBar(
                 .height(72.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
-            // Hardware deck base with 2dp crisp white border and 4dp black offset shadow
+            val brutal = MaterialTheme.brutalColors
+            // Hardware deck base with 2dp crisp theme border and 4dp black offset shadow
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .brutalCard(
                         cornerRadius = 18.dp,
-                        containerColor = BrutalSurfaceDark,
-                        borderColor = BrutalBorderWhite,
+                        containerColor = brutal.surface,
+                        borderColor = brutal.border,
                         borderWidth = 2.dp,
-                        shadowColor = BrutalShadowBlack,
+                        shadowColor = brutal.shadow,
                         shadowOffsetX = 4.dp,
                         shadowOffsetY = 4.dp
                     )
@@ -260,6 +326,7 @@ private fun FloatingBottomNavBar(
                     FloatingBottomNavItem(
                         item = item,
                         selected = currentRouteChecker(item.route),
+                        badgeCount = if (item == BottomNavItem.Notifications) alertsBadgeCount else 0,
                         onClick = { onSelectItem(item) },
                         modifier = Modifier
                             .weight(1f)
@@ -278,6 +345,7 @@ private fun FloatingBottomNavBar(
 private fun FloatingBottomNavItem(
     item: BottomNavItem,
     selected: Boolean,
+    badgeCount: Int = 0,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -289,8 +357,9 @@ private fun FloatingBottomNavItem(
         ),
         label = "keycap_lift"
     )
+    val brutal = MaterialTheme.brutalColors
     val contentColor by animateColorAsState(
-        targetValue = if (selected) BrutalInkBlack else Color(0xFFCBD5E1),
+        targetValue = if (selected) BrutalInkBlack else brutal.textMuted,
         label = "nav_color"
     )
     val keycapBg by animateColorAsState(
@@ -342,11 +411,11 @@ private fun FloatingBottomNavItem(
                     modifier = Modifier.size(21.dp),
                     tint = contentColor
                 )
-                // Badge dot on Notifications tab
-                if (item == BottomNavItem.Notifications) {
+                // Real unread / pending collaboration badge dot on Notifications tab
+                if (item == BottomNavItem.Notifications && badgeCount > 0) {
                     Box(
                         modifier = Modifier
-                            .size(7.dp)
+                            .size(8.dp)
                             .align(Alignment.TopEnd)
                             .clip(CircleShape)
                             .background(Color(0xFFF43F5E))

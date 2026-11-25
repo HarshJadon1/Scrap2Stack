@@ -26,10 +26,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.scrap2stack.app.ui.theme.BrutalBorderWhite
-import com.scrap2stack.app.ui.theme.BrutalShadowBlack
-import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
 import com.scrap2stack.app.ui.theme.ElectricMint
+import com.scrap2stack.app.ui.theme.brutalColors
 import kotlinx.coroutines.delay
 
 data class InAppAlert(
@@ -63,15 +61,16 @@ fun InAppNotificationBanner(
             .statusBarsPadding()
     ) {
         alert?.let { currentAlert ->
+            val brutal = MaterialTheme.brutalColors
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .tactileBrutalCard(
                         cornerRadius = 16.dp,
-                        containerColor = BrutalSurfaceDark,
+                        containerColor = brutal.surface,
                         borderColor = ElectricMint,
                         borderWidth = 2.dp,
-                        shadowColor = BrutalShadowBlack,
+                        shadowColor = brutal.shadow,
                         shadowOffsetX = 4.dp,
                         shadowOffsetY = 4.dp,
                         onClick = {
@@ -107,14 +106,14 @@ fun InAppNotificationBanner(
                             text = currentAlert.title,
                             style = MaterialTheme.typography.labelLarge.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White,
+                                color = brutal.textPrimary,
                                 fontSize = 13.sp
                             )
                         )
                         Text(
                             text = currentAlert.message,
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color(0xFF94A3B8),
+                                color = brutal.textMuted,
                                 fontSize = 12.sp
                             ),
                             maxLines = 1

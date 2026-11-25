@@ -21,14 +21,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.scrap2stack.app.core.ui.components.bouncingClickable
-import com.scrap2stack.app.core.ui.components.glassSurface
+import com.scrap2stack.app.core.ui.components.BrutalBadge
+import com.scrap2stack.app.core.ui.components.brutalCard
+import com.scrap2stack.app.core.ui.components.dotGridBackground
+import com.scrap2stack.app.core.ui.components.tactileBrutalCard
 import com.scrap2stack.app.domain.model.RoadmapItem
+import com.scrap2stack.app.ui.theme.AmberGold
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
 import com.scrap2stack.app.ui.theme.ElectricMint
-import com.scrap2stack.app.ui.theme.GlassWhiteBorder
+import com.scrap2stack.app.ui.theme.PrimaryIndigo
+import com.scrap2stack.app.ui.theme.brutalColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -36,11 +43,13 @@ fun RoadmapScreen(
     projectId: String,
     roadmapItems: List<RoadmapItem>,
     isGenerating: Boolean = false,
+    isLiveData: Boolean = true,
+    statusNote: String? = null,
     onGenerateRoadmap: () -> Unit = {},
     onStatusChange: (itemId: String, newStatus: String) -> Unit = { _, _ -> },
     onConvertPhaseToTasks: (RoadmapItem) -> Unit = {}
 ) {
-    val coroutineScope = rememberCoroutineScope()
+    val brutal = MaterialTheme.brutalColors
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     val totalPhases = roadmapItems.size
     val completedPhases = roadmapItems.count { it.status.uppercase() == "COMPLETED" }
@@ -50,21 +59,30 @@ fun RoadmapScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF080B11))
+            .background(brutal.canvas)
+            .dotGridBackground()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // AI Engine Header Banner
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .glassSurface(shape = RoundedCornerShape(22.dp))
-                    .padding(18.dp)
+                    .brutalCard(
+                        cornerRadius = 16.dp,
+                        containerColor = brutal.surface,
+                        borderColor = brutal.border,
+                        borderWidth = 2.dp,
+                        shadowColor = PrimaryIndigo,
+                        shadowOffsetX = 4.dp,
+                        shadowOffsetY = 4.dp
+                    )
+                    .padding(16.dp)
             ) {
                 Column {
                     Row(
@@ -75,16 +93,23 @@ fun RoadmapScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(ElectricMint.copy(alpha = 0.15f)),
+                                    .size(38.dp)
+                                    .brutalCard(
+                                        cornerRadius = 10.dp,
+                                        containerColor = ElectricMint,
+                                        borderColor = BrutalShadowBlack,
+                                        borderWidth = 1.5.dp,
+                                        shadowColor = BrutalShadowBlack,
+                                        shadowOffsetX = 2.dp,
+                                        shadowOffsetY = 2.dp
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.AutoAwesome,
                                     contentDescription = null,
-                                    tint = ElectricMint,
-                                    modifier = Modifier.size(20.dp)
+                                    tint = BrutalInkBlack,
+                                    modifier = Modifier.size(19.dp)
                                 )
                             }
                             Spacer(modifier = Modifier.width(10.dp))
@@ -92,15 +117,17 @@ fun RoadmapScreen(
                                 Text(
                                     text = "Revival Roadmap",
                                     style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        fontWeight = FontWeight.Black,
+                                        color = brutal.textPrimary
                                     )
                                 )
                                 Text(
-                                    text = "Powered by Gemini 1.5 Flash",
+                                    text = "GEMINI SPRINT PLANNER",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        color = ElectricMint,
-                                        fontWeight = FontWeight.SemiBold
+                                        fontFamily = FontFamily.Monospace,
+                                        color = brutal.accentOnSurface,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
                                     )
                                 )
                             }
@@ -109,19 +136,17 @@ fun RoadmapScreen(
                         // Generate/Regenerate Button
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(
-                                            ElectricMint.copy(alpha = 0.25f),
-                                            Color(0xFF38BDF8).copy(alpha = 0.25f)
-                                        )
-                                    )
+                                .tactileBrutalCard(
+                                    cornerRadius = 10.dp,
+                                    containerColor = ElectricMint,
+                                    borderColor = BrutalShadowBlack,
+                                    borderWidth = 2.dp,
+                                    shadowColor = BrutalShadowBlack,
+                                    shadowOffsetX = 3.dp,
+                                    shadowOffsetY = 3.dp,
+                                    enabled = !isGenerating,
+                                    onClick = onGenerateRoadmap
                                 )
-                                .border(1.dp, ElectricMint.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-                                .bouncingClickable(enabled = !isGenerating) {
-                                    onGenerateRoadmap()
-                                }
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -130,14 +155,15 @@ fun RoadmapScreen(
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(14.dp),
                                         strokeWidth = 2.dp,
-                                        color = ElectricMint
+                                        color = BrutalInkBlack
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        "Synthesizing...",
+                                        "BUILDING...",
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold
+                                            fontFamily = FontFamily.Monospace,
+                                            color = BrutalInkBlack,
+                                            fontWeight = FontWeight.Black
                                         )
                                     )
                                 }
@@ -146,15 +172,16 @@ fun RoadmapScreen(
                                     Icon(
                                         imageVector = if (roadmapItems.isEmpty()) Icons.Default.AutoAwesome else Icons.Default.Refresh,
                                         contentDescription = null,
-                                        tint = Color.White,
+                                        tint = BrutalInkBlack,
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = if (roadmapItems.isEmpty()) "Generate AI Plan" else "Regenerate",
+                                        text = if (roadmapItems.isEmpty()) "GENERATE" else "REGEN",
                                         style = MaterialTheme.typography.labelSmall.copy(
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold
+                                            fontFamily = FontFamily.Monospace,
+                                            color = BrutalInkBlack,
+                                            fontWeight = FontWeight.Black
                                         )
                                     )
                                 }
@@ -162,46 +189,64 @@ fun RoadmapScreen(
                         }
                     }
 
+                    if (!isLiveData && roadmapItems.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            BrutalBadge(
+                                text = "OFFLINE HEURISTIC",
+                                containerColor = AmberGold,
+                                contentColor = BrutalInkBlack,
+                                borderColor = brutal.border
+                            )
+                            if (!statusNote.isNullOrBlank()) {
+                                Text(
+                                    text = statusNote,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = brutal.textMuted
+                                )
+                            }
+                        }
+                    }
+
                     if (totalPhases > 0) {
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Milestone Progress: $completedPhases of $totalPhases Phases Done",
+                                text = "Milestone Progress: $completedPhases / $totalPhases Phases",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color(0xFF94A3B8)
+                                    color = brutal.textMuted
                                 )
                             )
                             Text(
                                 text = "${(animatedProgress * 100).toInt()}%",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = ElectricMint,
-                                    fontWeight = FontWeight.Bold
+                                    fontFamily = FontFamily.Monospace,
+                                    color = brutal.accentOnSurface,
+                                    fontWeight = FontWeight.Black
                                 )
                             )
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        // Progress Track
+                        Spacer(modifier = Modifier.height(6.dp))
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(Color.White.copy(alpha = 0.1f))
+                                .height(10.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(brutal.surfaceRaised)
+                                .border(1.5.dp, brutal.border, RoundedCornerShape(5.dp))
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth(animatedProgress)
                                     .fillMaxHeight()
-                                    .clip(RoundedCornerShape(3.dp))
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            listOf(ElectricMint, Color(0xFF38BDF8))
-                                        )
-                                    )
+                                    .background(ElectricMint)
                             )
                         }
                     }
@@ -211,7 +256,7 @@ fun RoadmapScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             if (roadmapItems.isEmpty() && !isGenerating) {
-                // Empty State with Prompt
+                // Empty State with Stack Pop Prompt
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -220,61 +265,80 @@ fun RoadmapScreen(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(24.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .brutalCard(
+                                cornerRadius = 18.dp,
+                                containerColor = brutal.surface,
+                                borderColor = brutal.border,
+                                borderWidth = 2.dp,
+                                shadowColor = brutal.shadow,
+                                shadowOffsetX = 4.dp,
+                                shadowOffsetY = 4.dp
+                            )
+                            .padding(24.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape)
-                                .background(ElectricMint.copy(alpha = 0.1f)),
+                                .size(68.dp)
+                                .brutalCard(
+                                    cornerRadius = 16.dp,
+                                    containerColor = ElectricMint,
+                                    borderColor = brutal.border,
+                                    borderWidth = 2.dp,
+                                    shadowColor = brutal.shadow,
+                                    shadowOffsetX = 3.dp,
+                                    shadowOffsetY = 3.dp
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.AutoAwesome,
                                 contentDescription = null,
-                                tint = ElectricMint,
-                                modifier = Modifier.size(36.dp)
+                                tint = BrutalInkBlack,
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "No Roadmap Generated Yet",
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                fontWeight = FontWeight.Black,
+                                color = brutal.textPrimary
                             )
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Tap 'Generate AI Plan' to let Gemini evaluate the codebase and generate an actionable revival trajectory.",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color(0xFF94A3B8)
+                                color = brutal.textMuted
                             ),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(20.dp))
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(ElectricMint, Color(0xFF059669))
-                                    )
+                                .tactileBrutalCard(
+                                    cornerRadius = 14.dp,
+                                    containerColor = ElectricMint,
+                                    borderColor = brutal.border,
+                                    borderWidth = 2.dp,
+                                    shadowColor = BrutalShadowBlack,
+                                    shadowOffsetX = 4.dp,
+                                    shadowOffsetY = 4.dp,
+                                    onClick = onGenerateRoadmap
                                 )
-                                .bouncingClickable {
-                                    onGenerateRoadmap()
-                                }
-                                .padding(horizontal = 24.dp, vertical = 14.dp),
+                                .padding(horizontal = 20.dp, vertical = 14.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = BrutalInkBlack, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     "Generate AI Roadmap with Gemini",
                                     style = MaterialTheme.typography.labelLarge.copy(
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold
+                                        color = BrutalInkBlack,
+                                        fontWeight = FontWeight.Black
                                     )
                                 )
                             }
@@ -316,23 +380,33 @@ fun RoadmapScreen(
             exit = fadeOut(),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 24.dp)
+                .padding(bottom = 24.dp, start = 16.dp, end = 16.dp)
         ) {
             snackbarMessage?.let { msg ->
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFF0F172A))
-                        .border(1.dp, ElectricMint.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
-                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                        .brutalCard(
+                            cornerRadius = 14.dp,
+                            containerColor = brutal.surface,
+                            borderColor = brutal.border,
+                            borderWidth = 2.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 3.dp,
+                            shadowOffsetY = 3.dp
+                        )
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = ElectricMint, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = brutal.accentOnSurface, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text(text = msg, style = MaterialTheme.typography.bodySmall.copy(color = Color.White, fontWeight = FontWeight.SemiBold))
+                        Text(
+                            text = msg,
+                            modifier = Modifier.weight(1f, fill = false),
+                            style = MaterialTheme.typography.bodySmall.copy(color = brutal.textPrimary, fontWeight = FontWeight.Bold)
+                        )
                         Spacer(modifier = Modifier.width(12.dp))
                         IconButton(onClick = { snackbarMessage = null }, modifier = Modifier.size(20.dp)) {
-                            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Color.Gray, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = brutal.textMuted, modifier = Modifier.size(14.dp))
                         }
                     }
                 }
@@ -347,13 +421,14 @@ fun RoadmapPhaseCard(
     onStatusToggle: () -> Unit,
     onConvertToTasks: () -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     val isCompleted = item.status.uppercase() == "COMPLETED"
     val isInProgress = item.status.uppercase() == "IN_PROGRESS"
 
     val statusColor by animateColorAsState(
         targetValue = when {
             isCompleted -> ElectricMint
-            isInProgress -> Color(0xFF38BDF8)
+            isInProgress -> AmberGold
             else -> Color(0xFF94A3B8)
         },
         label = "status_color"
@@ -362,8 +437,16 @@ fun RoadmapPhaseCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glassSurface(shape = RoundedCornerShape(20.dp))
-            .padding(18.dp)
+            .brutalCard(
+                cornerRadius = 16.dp,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = if (isCompleted) ElectricMint else PrimaryIndigo,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
+            .padding(16.dp)
     ) {
         Column {
             // Header Row: Phase Tag + Status Pill
@@ -375,17 +458,18 @@ fun RoadmapPhaseCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(ElectricMint.copy(alpha = 0.15f))
-                            .border(1.dp, ElectricMint.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(PrimaryIndigo)
+                            .border(1.5.dp, BrutalShadowBlack, RoundedCornerShape(6.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
                             text = "PHASE ${item.order}",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = ElectricMint,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 1.sp
+                                fontFamily = FontFamily.Monospace,
+                                color = Color.White,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 0.8.sp
                             )
                         )
                     }
@@ -395,7 +479,7 @@ fun RoadmapPhaseCard(
                         Icon(
                             imageVector = Icons.Default.Flag,
                             contentDescription = "Milestone",
-                            tint = Color(0xFFFBBF24),
+                            tint = AmberGold,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -404,10 +488,16 @@ fun RoadmapPhaseCard(
                 // Interactive Status Pill
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(statusColor.copy(alpha = 0.15f))
-                        .border(1.dp, statusColor.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-                        .bouncingClickable { onStatusToggle() }
+                        .tactileBrutalCard(
+                            cornerRadius = 10.dp,
+                            containerColor = statusColor,
+                            borderColor = BrutalShadowBlack,
+                            borderWidth = 1.5.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 2.dp,
+                            shadowOffsetY = 2.dp,
+                            onClick = onStatusToggle
+                        )
                         .padding(horizontal = 10.dp, vertical = 5.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -418,16 +508,17 @@ fun RoadmapPhaseCard(
                                 else -> Icons.Default.RadioButtonUnchecked
                             },
                             contentDescription = null,
-                            tint = statusColor,
+                            tint = BrutalInkBlack,
                             modifier = Modifier.size(13.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = item.status.replace("_", " ").uppercase(),
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = statusColor,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
+                                fontFamily = FontFamily.Monospace,
+                                color = BrutalInkBlack,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 10.sp
                             )
                         )
                     }
@@ -440,8 +531,8 @@ fun RoadmapPhaseCard(
             Text(
                 text = item.title,
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    fontWeight = FontWeight.Black,
+                    color = brutal.textPrimary
                 )
             )
 
@@ -451,7 +542,7 @@ fun RoadmapPhaseCard(
             Text(
                 text = item.description,
                 style = MaterialTheme.typography.bodySmall.copy(
-                    color = Color(0xFF94A3B8),
+                    color = brutal.textMuted,
                     lineHeight = 18.sp
                 )
             )
@@ -473,15 +564,17 @@ fun RoadmapPhaseCard(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(Color.White.copy(alpha = 0.06f))
-                                .border(0.5.dp, GlassWhiteBorder, RoundedCornerShape(6.dp))
+                                .background(brutal.surfaceRaised)
+                                .border(1.dp, brutal.border, RoundedCornerShape(6.dp))
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
                                 text = skill,
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color(0xFFCBD5E1),
-                                    fontSize = 10.sp
+                                    fontFamily = FontFamily.Monospace,
+                                    color = brutal.textPrimary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
                                 )
                             )
                         }
@@ -492,14 +585,14 @@ fun RoadmapPhaseCard(
                             Icon(
                                 imageVector = Icons.Default.Schedule,
                                 contentDescription = null,
-                                tint = Color(0xFF64748B),
+                                tint = brutal.textMuted,
                                 modifier = Modifier.size(12.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = item.estimatedEffort,
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color(0xFF94A3B8),
+                                    color = brutal.textMuted,
                                     fontSize = 11.sp
                                 )
                             )
@@ -510,26 +603,33 @@ fun RoadmapPhaseCard(
                 // Action to convert phase to tasks
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.08f))
-                        .border(1.dp, GlassWhiteBorder, RoundedCornerShape(10.dp))
-                        .bouncingClickable { onConvertToTasks() }
+                        .tactileBrutalCard(
+                            cornerRadius = 10.dp,
+                            containerColor = ElectricMint,
+                            borderColor = BrutalShadowBlack,
+                            borderWidth = 1.5.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 2.dp,
+                            shadowOffsetY = 2.dp,
+                            onClick = onConvertToTasks
+                        )
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Create tasks",
-                            tint = ElectricMint,
+                            tint = BrutalInkBlack,
                             modifier = Modifier.size(14.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "+ Kanban Tasks",
+                            text = "KANBAN",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = ElectricMint,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
+                                fontFamily = FontFamily.Monospace,
+                                color = BrutalInkBlack,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 10.sp
                             )
                         )
                     }

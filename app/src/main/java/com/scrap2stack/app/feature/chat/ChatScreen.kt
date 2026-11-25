@@ -32,17 +32,18 @@ import androidx.compose.ui.window.Dialog
 import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.domain.model.ChatMessage
 import com.scrap2stack.app.feature.chat.components.CodeBlockBubble
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
-import com.scrap2stack.app.ui.theme.PrimaryIndigoDark
-import com.scrap2stack.app.ui.theme.PrimaryIndigoLight
-import com.scrap2stack.app.ui.theme.RevivalEmerald
+import com.scrap2stack.app.ui.theme.brutalColors
 
 @Composable
 fun ChatScreen(
     projectId: String,
     viewModel: ChatViewModel
 ) {
+    val brutal = MaterialTheme.brutalColors
     val uiState by viewModel.uiState.collectAsState()
     var textInput by remember { mutableStateOf("") }
     var showCodeDialog by remember { mutableStateOf(false) }
@@ -65,47 +66,36 @@ fun ChatScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(brutal.canvas)
+            .dotGridBackground()
             .imePadding()
             .padding(horizontal = 16.dp)
     ) {
-        // Chat Header with Realtime Indicator
+        // Chat Header with Realtime Sticker
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 4.dp),
+                .padding(vertical = 12.dp, horizontal = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
+                BrutalHeaderTag(text = "TEAM // CHANNEL")
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Team Workspace Discussion",
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         fontSize = 17.sp
                     ),
-                    color = Color.White
+                    color = brutal.textPrimary
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 2.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(7.dp)
-                            .clip(CircleShape)
-                            .background(ElectricMint)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Realtime Active",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = ElectricMint
-                    )
-                }
             }
+            BrutalBadge(
+                text = "REALTIME",
+                containerColor = ElectricMint,
+                contentColor = BrutalInkBlack
+            )
         }
 
         // Messages Feed
@@ -143,13 +133,13 @@ fun ChatScreen(
             }
         }
 
-        // Quick Emoji Reaction Bar (Ergonomic 44dp touch targets)
+        // Quick Emoji Reaction Bar (Stack Pop Keycaps)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
                 .padding(vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             val emojis = listOf("👍", "🚀", "🔥", "🎉", "💡", "👀", "✅")
             emojis.forEach { emoji ->
@@ -157,12 +147,16 @@ fun ChatScreen(
                     modifier = Modifier
                         .height(42.dp)
                         .defaultMinSize(minWidth = 44.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFF131D31))
-                        .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), RoundedCornerShape(14.dp))
-                        .bouncingClickable(scaleDown = 0.88f) {
-                            viewModel.sendMessage(projectId, emoji)
-                        }
+                        .tactileBrutalCard(
+                            cornerRadius = 12.dp,
+                            containerColor = brutal.surface,
+                            borderColor = brutal.border,
+                            borderWidth = 1.5.dp,
+                            shadowColor = brutal.shadow,
+                            shadowOffsetX = 2.dp,
+                            shadowOffsetY = 2.dp,
+                            onClick = { viewModel.sendMessage(projectId, emoji) }
+                        )
                         .padding(horizontal = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -171,40 +165,47 @@ fun ChatScreen(
             }
         }
 
-        // Glass Input Bar
-        Surface(
+        // Stack Pop Input Bar
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            shape = RoundedCornerShape(26.dp),
-            color = Color(0xFF0F172A).copy(alpha = 0.95f),
-            border = BorderStroke(
-                1.dp,
-                Brush.linearGradient(
-                    listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0.04f))
+                .padding(vertical = 10.dp)
+                .brutalCard(
+                    cornerRadius = 18.dp,
+                    containerColor = brutal.surface,
+                    borderColor = brutal.border,
+                    borderWidth = 2.dp,
+                    shadowColor = brutal.shadow,
+                    shadowOffsetX = 4.dp,
+                    shadowOffsetY = 4.dp
                 )
-            )
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Code Snippet Button
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(ElectricMint.copy(alpha = 0.12f))
-                        .border(BorderStroke(1.dp, ElectricMint.copy(alpha = 0.3f)), CircleShape)
-                        .bouncingClickable(scaleDown = 0.92f) { showCodeDialog = true },
+                        .size(40.dp)
+                        .tactileBrutalCard(
+                            cornerRadius = 11.dp,
+                            containerColor = ElectricMint,
+                            borderColor = brutal.border,
+                            borderWidth = 2.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 2.dp,
+                            shadowOffsetY = 2.dp,
+                            onClick = { showCodeDialog = true }
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Code,
                         contentDescription = "Share Code",
-                        tint = ElectricMint,
+                        tint = BrutalInkBlack,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -218,48 +219,51 @@ fun ChatScreen(
                         Text(
                             "Type a message (or use ```code```)...",
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+                            color = brutal.textMuted
                         )
                     },
                     modifier = Modifier.weight(1f),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = brutal.textPrimary),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedTextColor = brutal.textPrimary,
+                        unfocusedTextColor = brutal.textPrimary
                     ),
                     singleLine = false,
                     maxLines = 4
                 )
 
                 // Send Button
+                val canSend = textInput.isNotBlank()
                 Box(
                     modifier = Modifier
                         .size(42.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (textInput.isNotBlank()) {
-                                Brush.horizontalGradient(listOf(PrimaryIndigo, PrimaryIndigoDark))
-                            } else {
-                                Brush.linearGradient(listOf(Color(0xFF1E293B), Color(0xFF1E293B)))
+                        .tactileBrutalCard(
+                            cornerRadius = 11.dp,
+                            containerColor = if (canSend) PrimaryIndigo else brutal.surfaceRaised,
+                            borderColor = brutal.border,
+                            borderWidth = 2.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 2.dp,
+                            shadowOffsetY = 2.dp,
+                            enabled = canSend,
+                            onClick = {
+                                if (canSend) {
+                                    viewModel.sendMessage(projectId, textInput)
+                                    textInput = ""
+                                }
                             }
-                        )
-                        .bouncingClickable(
-                            enabled = textInput.isNotBlank(),
-                            scaleDown = 0.90f
-                        ) {
-                            if (textInput.isNotBlank()) {
-                                viewModel.sendMessage(projectId, textInput)
-                                textInput = ""
-                            }
-                        },
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Send",
-                        tint = if (textInput.isNotBlank()) Color.White else Color.Gray,
+                        tint = if (canSend) Color.White else brutal.textMuted,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -285,6 +289,10 @@ fun EnhancedChatBubble(
     message: ChatMessage,
     isMe: Boolean
 ) {
+    val brutal = MaterialTheme.brutalColors
+    val bubbleContainer = if (isMe) PrimaryIndigo else brutal.surface
+    val textColor = if (isMe) Color.White else brutal.textPrimary
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start,
@@ -305,54 +313,34 @@ fun EnhancedChatBubble(
             if (!isMe) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    modifier = Modifier.padding(start = 2.dp, bottom = 4.dp)
                 ) {
                     Text(
                         text = message.senderName.ifBlank { "Team Member" },
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 11.sp
                         ),
-                        color = ElectricMint
+                        color = brutal.accentOnSurface
                     )
                 }
             }
 
-            // Message Body (Splits plain text and ```code``` blocks)
-            val bubbleBrush = if (isMe) {
-                Brush.horizontalGradient(listOf(PrimaryIndigo, PrimaryIndigoDark))
-            } else {
-                Brush.linearGradient(listOf(Color(0xFF131D31), Color(0xFF0F172A)))
-            }
-            val bubbleBorder = if (isMe) {
-                BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
-            } else {
-                BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
-            }
-
             Box(
                 modifier = Modifier
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 18.dp,
-                            topEnd = 18.dp,
-                            bottomStart = if (isMe) 18.dp else 4.dp,
-                            bottomEnd = if (isMe) 4.dp else 18.dp
-                        )
-                    )
-                    .background(bubbleBrush)
-                    .border(
-                        bubbleBorder,
-                        RoundedCornerShape(
-                            topStart = 18.dp,
-                            topEnd = 18.dp,
-                            bottomStart = if (isMe) 18.dp else 4.dp,
-                            bottomEnd = if (isMe) 4.dp else 18.dp
-                        )
+                    .brutalCard(
+                        cornerRadius = 16.dp,
+                        containerColor = bubbleContainer,
+                        borderColor = brutal.border,
+                        borderWidth = 2.dp,
+                        shadowColor = brutal.shadow,
+                        shadowOffsetX = 3.dp,
+                        shadowOffsetY = 3.dp
                     )
                     .padding(14.dp)
             ) {
-                ParsedMessageContent(rawText = message.message)
+                ParsedMessageContent(rawText = message.message, textColor = textColor)
             }
 
             // Timestamp
@@ -361,8 +349,11 @@ fun EnhancedChatBubble(
                 if (timeStr.isNotEmpty()) {
                     Text(
                         text = timeStr,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = Color.White.copy(alpha = 0.4f),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 10.sp
+                        ),
+                        color = brutal.textMuted,
                         modifier = Modifier.padding(top = 3.dp, start = 4.dp, end = 4.dp)
                     )
                 }
@@ -375,7 +366,10 @@ fun EnhancedChatBubble(
  * Parses message text to render normal paragraphs and embedded CodeBlockBubbles
  */
 @Composable
-fun ParsedMessageContent(rawText: String) {
+fun ParsedMessageContent(
+    rawText: String,
+    textColor: Color = Color.White
+) {
     val codeBlockRegex = Regex("```(\\w+)?\\n([\\s\\S]*?)```")
     val match = codeBlockRegex.find(rawText)
 
@@ -390,7 +384,7 @@ fun ParsedMessageContent(rawText: String) {
                 Text(
                     text = prefix,
                     style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-                    color = Color.White
+                    color = textColor
                 )
             }
 
@@ -403,7 +397,7 @@ fun ParsedMessageContent(rawText: String) {
                 Text(
                     text = suffix,
                     style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-                    color = Color.White
+                    color = textColor
                 )
             }
         }
@@ -411,7 +405,7 @@ fun ParsedMessageContent(rawText: String) {
         Text(
             text = rawText,
             style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-            color = Color.White
+            color = textColor
         )
     }
 }
@@ -424,18 +418,25 @@ fun CodeSnippetModal(
     onDismiss: () -> Unit,
     onSendCode: (String, String) -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     var selectedLang by remember { mutableStateOf("kotlin") }
     var codeInput by remember { mutableStateOf("") }
     val languages = listOf("kotlin", "python", "javascript", "sql", "json", "dart")
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = Color(0xFF0F172A),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
+                .padding(8.dp)
+                .brutalCard(
+                    cornerRadius = 18.dp,
+                    containerColor = brutal.surface,
+                    borderColor = brutal.border,
+                    borderWidth = 2.dp,
+                    shadowColor = BrutalShadowBlack,
+                    shadowOffsetX = 5.dp,
+                    shadowOffsetY = 5.dp
+                )
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -446,16 +447,39 @@ fun CodeSnippetModal(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Share Code Snippet",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp
-                        ),
-                        color = Color.White
-                    )
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White.copy(alpha = 0.6f))
+                    Column {
+                        BrutalHeaderTag(text = "SNIPPET // CODE")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Share Code Snippet",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Black,
+                                fontSize = 17.sp
+                            ),
+                            color = brutal.textPrimary
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = brutal.surfaceRaised,
+                                borderColor = brutal.border,
+                                borderWidth = 1.5.dp,
+                                shadowColor = brutal.shadow,
+                                shadowOffsetX = 2.dp,
+                                shadowOffsetY = 2.dp,
+                                onClick = onDismiss
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = brutal.textPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
 
@@ -464,30 +488,37 @@ fun CodeSnippetModal(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     languages.forEach { lang ->
                         val isSelected = selectedLang == lang
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (isSelected) ElectricMint.copy(alpha = 0.15f) else Color(0xFF131D31),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isSelected) ElectricMint.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.08f)
-                            ),
-                            modifier = Modifier.bouncingClickable(scaleDown = 0.94f) { selectedLang = lang }
+                        Box(
+                            modifier = Modifier
+                                .tactileBrutalCard(
+                                    cornerRadius = 10.dp,
+                                    containerColor = if (isSelected) ElectricMint else brutal.surfaceRaised,
+                                    borderColor = brutal.border,
+                                    borderWidth = if (isSelected) 2.dp else 1.5.dp,
+                                    shadowColor = brutal.shadow,
+                                    shadowOffsetX = 2.dp,
+                                    shadowOffsetY = 2.dp,
+                                    onClick = { selectedLang = lang }
+                                )
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             Text(
                                 text = lang.uppercase(),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = if (isSelected) ElectricMint else Color.White.copy(alpha = 0.65f)
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Black
+                                ),
+                                color = if (isSelected) BrutalInkBlack else brutal.textMuted
                             )
                         }
                     }
                 }
 
-                // Code Input Area
+                // Code Input Area (intentional dark terminal block)
                 OutlinedTextField(
                     value = codeInput,
                     onValueChange = { codeInput = it },
@@ -495,7 +526,7 @@ fun CodeSnippetModal(
                         Text(
                             "Paste or write your $selectedLang code here...",
                             style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-                            color = Color.White.copy(alpha = 0.4f)
+                            color = Color.White.copy(alpha = 0.45f)
                         )
                     },
                     modifier = Modifier
@@ -508,7 +539,7 @@ fun CodeSnippetModal(
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = ElectricMint,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.12f),
+                        unfocusedBorderColor = brutal.border,
                         focusedContainerColor = Color(0xFF090D16),
                         unfocusedContainerColor = Color(0xFF090D16)
                     )

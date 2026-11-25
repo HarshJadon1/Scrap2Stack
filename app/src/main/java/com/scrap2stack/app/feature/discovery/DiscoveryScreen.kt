@@ -27,16 +27,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scrap2stack.app.core.ui.components.*
-import com.scrap2stack.app.ui.theme.BrutalBorderWhite
-import com.scrap2stack.app.ui.theme.BrutalCanvasDark
 import com.scrap2stack.app.ui.theme.BrutalInkBlack
 import com.scrap2stack.app.ui.theme.BrutalShadowBlack
-import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
-import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
-import com.scrap2stack.app.ui.theme.PrimaryIndigoDark
-import com.scrap2stack.app.ui.theme.PrimaryIndigoLight
+import com.scrap2stack.app.ui.theme.brutalColors
 
 enum class SortOrder {
     REVIVAL_DESC, REVIVAL_ASC, NEWEST
@@ -55,13 +50,14 @@ fun DiscoveryScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsState()
+    val brutal = MaterialTheme.brutalColors
 
     LaunchedEffect(Unit) {
         viewModel.loadProjects()
     }
 
     Scaffold(
-        containerColor = BrutalCanvasDark,
+        containerColor = brutal.canvas,
         topBar = {
             Column(
                 modifier = Modifier
@@ -82,7 +78,7 @@ fun DiscoveryScreen(
                                 letterSpacing = 1.sp,
                                 fontSize = 11.sp
                             ),
-                            color = ElectricMint
+                            color = brutal.accentOnSurface
                         )
                         Text(
                             text = "Discover Projects",
@@ -91,7 +87,7 @@ fun DiscoveryScreen(
                                 fontSize = 26.sp,
                                 letterSpacing = (-0.5).sp
                             ),
-                            color = Color.White
+                            color = brutal.textPrimary
                         )
                     }
 
@@ -102,10 +98,10 @@ fun DiscoveryScreen(
                             .size(44.dp)
                             .tactileBrutalCard(
                                 cornerRadius = 12.dp,
-                                containerColor = if (filterActive) ElectricMint else BrutalSurfaceRaised,
-                                borderColor = if (filterActive) BrutalShadowBlack else BrutalBorderWhite,
+                                containerColor = if (filterActive) ElectricMint else brutal.surfaceRaised,
+                                borderColor = if (filterActive) BrutalShadowBlack else brutal.border,
                                 borderWidth = 2.dp,
-                                shadowColor = if (filterActive) PrimaryIndigo else BrutalShadowBlack,
+                                shadowColor = if (filterActive) PrimaryIndigo else brutal.shadow,
                                 shadowOffsetX = 3.dp,
                                 shadowOffsetY = 3.dp,
                                 onClick = { showFilterSheet = true }
@@ -116,7 +112,7 @@ fun DiscoveryScreen(
                             imageVector = Icons.Default.Tune,
                             contentDescription = "Filters",
                             modifier = Modifier.size(20.dp),
-                            tint = if (filterActive) BrutalInkBlack else Color.White
+                            tint = if (filterActive) BrutalInkBlack else brutal.textPrimary
                         )
                     }
                 }
@@ -130,10 +126,10 @@ fun DiscoveryScreen(
                         .height(56.dp)
                         .brutalCard(
                             cornerRadius = 14.dp,
-                            containerColor = BrutalSurfaceDark,
-                            borderColor = BrutalBorderWhite,
+                            containerColor = brutal.surface,
+                            borderColor = brutal.border,
                             borderWidth = 2.dp,
-                            shadowColor = BrutalShadowBlack,
+                            shadowColor = brutal.shadow,
                             shadowOffsetX = 4.dp,
                             shadowOffsetY = 4.dp
                         )
@@ -147,7 +143,7 @@ fun DiscoveryScreen(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
-                            tint = ElectricMint,
+                            tint = brutal.accentOnSurface,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
@@ -159,7 +155,7 @@ fun DiscoveryScreen(
                                 Text(
                                     "Search tech, skills, or projects...",
                                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.48f)
+                                    color = brutal.textMuted
                                 )
                             },
                             singleLine = true,
@@ -168,7 +164,9 @@ fun DiscoveryScreen(
                                 unfocusedContainerColor = Color.Transparent,
                                 disabledContainerColor = Color.Transparent,
                                 focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor = brutal.textPrimary,
+                                unfocusedTextColor = brutal.textPrimary
                             )
                         )
                         if (searchQuery.isNotEmpty()) {
@@ -176,7 +174,7 @@ fun DiscoveryScreen(
                                 Icon(
                                     imageVector = Icons.Default.Clear,
                                     contentDescription = "Clear",
-                                    tint = Color.White.copy(alpha = 0.7f),
+                                    tint = brutal.textMuted,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -200,10 +198,10 @@ fun DiscoveryScreen(
                             modifier = Modifier
                                 .tactileBrutalCard(
                                     cornerRadius = 10.dp,
-                                    containerColor = if (isSelected) ElectricMint else BrutalSurfaceRaised,
-                                    borderColor = if (isSelected) BrutalShadowBlack else BrutalBorderWhite.copy(alpha = 0.8f),
+                                    containerColor = if (isSelected) ElectricMint else brutal.surfaceRaised,
+                                    borderColor = if (isSelected) BrutalShadowBlack else brutal.border,
                                     borderWidth = 1.5.dp,
-                                    shadowColor = if (isSelected) PrimaryIndigo else BrutalShadowBlack,
+                                    shadowColor = if (isSelected) PrimaryIndigo else brutal.shadow,
                                     shadowOffsetX = 3.dp,
                                     shadowOffsetY = 3.dp,
                                     onClick = { selectedCategory = category }
@@ -217,7 +215,7 @@ fun DiscoveryScreen(
                                     fontWeight = FontWeight.Black,
                                     fontSize = 11.sp
                                 ),
-                                color = if (isSelected) BrutalInkBlack else Color.White
+                                color = if (isSelected) BrutalInkBlack else brutal.textPrimary
                             )
                         }
                     }
@@ -309,7 +307,7 @@ fun DiscoveryScreen(
         if (showFilterSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showFilterSheet = false },
-                containerColor = BrutalSurfaceDark,
+                containerColor = brutal.surface,
                 scrimColor = Color.Black.copy(alpha = 0.65f)
             ) {
                 Column(
@@ -320,14 +318,14 @@ fun DiscoveryScreen(
                 ) {
                     Text(
                         text = "Filter & Sort Projects",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                        color = brutal.textPrimary
                     )
 
                     Text(
                         text = "Sort By Revival Score",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = ElectricMint
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = brutal.accentOnSurface
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         FilterChip(

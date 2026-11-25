@@ -1,22 +1,15 @@
 package com.scrap2stack.app.feature.project
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.*
@@ -24,7 +17,13 @@ import com.scrap2stack.app.domain.model.ProjectAnalysis
 import com.scrap2stack.app.domain.model.ProjectRisk
 import com.scrap2stack.app.domain.model.RequiredSkillRecommendation
 import com.scrap2stack.app.domain.model.RoadmapStep
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.ElectricMint
+import com.scrap2stack.app.ui.theme.PrimaryIndigo
+import com.scrap2stack.app.ui.theme.StatusAbandoned
 import com.scrap2stack.app.ui.theme.StatusReviving
+import com.scrap2stack.app.ui.theme.brutalColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +34,7 @@ fun ScrapAIAnalysisScreen(
     onNavigateToRevivalScore: () -> Unit,
     onNavigateToWorkspace: (String) -> Unit = {}
 ) {
+    val brutal = MaterialTheme.brutalColors
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(projectId) {
@@ -42,32 +42,29 @@ fun ScrapAIAnalysisScreen(
     }
 
     Scaffold(
+        containerColor = brutal.canvas,
         topBar = {
-            TopAppBar(
-                title = { Text("ScrapAI Code Audit") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
+            BrutalTopBar(
+                tag = "AUDIT // SCRAPAI",
+                title = "ScrapAI Code Audit",
+                onNavigateBack = onNavigateBack
             )
         }
     ) { innerPadding ->
-        when (val state = uiState) {
-            is ScrapAIAnalysisState.Loading -> {
-                LoadingView(modifier = Modifier.padding(innerPadding))
-            }
-            is ScrapAIAnalysisState.Error -> {
-                ErrorView(
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .dotGridBackground()
+        ) {
+            when (val state = uiState) {
+                is ScrapAIAnalysisState.Loading -> LoadingView()
+                is ScrapAIAnalysisState.Error -> ErrorView(
                     message = state.message,
-                    onRetry = { viewModel.loadAnalysis(projectId) },
-                    modifier = Modifier.padding(innerPadding)
+                    onRetry = { viewModel.loadAnalysis(projectId) }
                 )
-            }
-            is ScrapAIAnalysisState.Success -> {
-                ScrapAIAnalysisContent(
+                is ScrapAIAnalysisState.Success -> ScrapAIAnalysisContent(
                     analysis = state.analysis,
-                    innerPadding = innerPadding,
                     onNavigateToRevivalScore = onNavigateToRevivalScore,
                     onNavigateToWorkspace = onNavigateToWorkspace
                 )
@@ -79,38 +76,48 @@ fun ScrapAIAnalysisScreen(
 @Composable
 private fun ScrapAIAnalysisContent(
     analysis: ProjectAnalysis,
-    innerPadding: PaddingValues,
     onNavigateToRevivalScore: () -> Unit,
     onNavigateToWorkspace: (String) -> Unit = {}
 ) {
+    val brutal = MaterialTheme.brutalColors
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 20.dp)
             .verticalScroll(rememberScrollState())
     ) {
+        Spacer(modifier = Modifier.height(8.dp))
         // AI Score Header
         Scrap2StackCard(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shadowColor = ElectricMint
         ) {
             Row(
-                modifier = Modifier.padding(20.dp),
+                modifier = Modifier.padding(18.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(64.dp)
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .brutalCard(
+                            cornerRadius = 14.dp,
+                            containerColor = ElectricMint,
+                            borderColor = brutal.border,
+                            borderWidth = 2.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 3.dp,
+                            shadowOffsetY = 3.dp
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "${analysis.revivalScore}%",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    Text(
+                        text = "${analysis.revivalScore}%",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black
+                        ),
+                        color = BrutalInkBlack
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -118,29 +125,44 @@ private fun ScrapAIAnalysisContent(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Revival Potential",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                        color = brutal.textPrimary
                     )
                     Text(
                         text = analysis.scoreExplanation,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        color = brutal.textMuted
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Executive Summary
         SectionHeader(title = "AI Codebase Summary")
-        Text(
-            text = analysis.projectSummary,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .brutalCard(
+                    cornerRadius = 14.dp,
+                    containerColor = brutal.surface,
+                    borderColor = brutal.border,
+                    borderWidth = 2.dp,
+                    shadowColor = brutal.shadow,
+                    shadowOffsetX = 3.dp,
+                    shadowOffsetY = 3.dp
+                )
+                .padding(16.dp)
+        ) {
+            Text(
+                text = analysis.projectSummary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = brutal.textPrimary
+            )
+        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Required Skills Detected
         if (analysis.requiredSkills.isNotEmpty()) {
@@ -150,7 +172,7 @@ private fun ScrapAIAnalysisContent(
                     SkillRequirementRow(item)
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
         }
 
         // Risks
@@ -161,7 +183,7 @@ private fun ScrapAIAnalysisContent(
                     RiskRow(risk)
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
         }
 
         // Recommended Roadmap
@@ -176,14 +198,14 @@ private fun ScrapAIAnalysisContent(
         }
 
         Scrap2StackButton(
-            text = "🚀 Adopt Plan & Launch Workspace",
+            text = "🚀 ADOPT PLAN & LAUNCH WORKSPACE",
             onClick = { onNavigateToWorkspace(analysis.projectId) }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
         Scrap2StackOutlinedButton(
-            text = "📊 View Strategy & Match Teammates",
+            text = "📊 VIEW STRATEGY & MATCH TEAMMATES",
             onClick = onNavigateToRevivalScore
         )
 
@@ -193,20 +215,35 @@ private fun ScrapAIAnalysisContent(
 
 @Composable
 private fun SkillRequirementRow(item: RequiredSkillRecommendation) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    val brutal = MaterialTheme.brutalColors
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .brutalCard(
+                cornerRadius = 12.dp,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = brutal.shadow,
+                shadowOffsetX = 3.dp,
+                shadowOffsetY = 3.dp
+            )
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(item.skill, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                item.skill,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black),
+                color = brutal.textPrimary
+            )
             StatusChip(
                 status = item.importance.name,
-                color = if (item.importance.name == "CRITICAL") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                color = if (item.importance.name == "CRITICAL") StatusAbandoned else PrimaryIndigo
             )
         }
     }
@@ -214,10 +251,19 @@ private fun SkillRequirementRow(item: RequiredSkillRecommendation) {
 
 @Composable
 private fun RiskRow(risk: ProjectRisk) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
+    val brutal = MaterialTheme.brutalColors
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .brutalCard(
+                cornerRadius = 12.dp,
+                containerColor = StatusAbandoned.copy(alpha = 0.08f),
+                borderColor = StatusAbandoned,
+                borderWidth = 2.dp,
+                shadowColor = brutal.shadow,
+                shadowOffsetX = 3.dp,
+                shadowOffsetY = 3.dp
+            )
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -226,21 +272,20 @@ private fun RiskRow(risk: ProjectRisk) {
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.error,
+                tint = StatusAbandoned,
                 modifier = Modifier.size(20.dp).padding(top = 2.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
                     text = risk.risk,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
+                    color = StatusAbandoned
                 )
                 Text(
                     text = risk.explanation,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                    color = brutal.textPrimary
                 )
             }
         }
@@ -249,10 +294,19 @@ private fun RiskRow(risk: ProjectRisk) {
 
 @Composable
 private fun RoadmapStepCard(step: RoadmapStep) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    val brutal = MaterialTheme.brutalColors
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .brutalCard(
+                cornerRadius = 14.dp,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = PrimaryIndigo,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -262,17 +316,21 @@ private fun RoadmapStepCard(step: RoadmapStep) {
             ) {
                 Text(
                     text = "PHASE ${step.step}: ${step.title}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black
+                    ),
+                    color = brutal.accentOnSurface,
+                    modifier = Modifier.weight(1f)
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 StatusChip(status = step.priority.name, color = StatusReviving)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = step.description,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                color = brutal.textMuted
             )
         }
     }

@@ -25,9 +25,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scrap2stack.app.core.ui.components.bouncingClickable
+import com.scrap2stack.app.core.ui.components.brutalCard
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.NeonCyan
 import com.scrap2stack.app.ui.theme.PrimaryIndigoLight
+import com.scrap2stack.app.ui.theme.brutalColors
 import kotlinx.coroutines.delay
 
 @Composable
@@ -36,6 +39,7 @@ fun CodeBlockBubble(
     code: String,
     modifier: Modifier = Modifier
 ) {
+    val brutal = MaterialTheme.brutalColors
     val clipboardManager = LocalClipboardManager.current
     var isCopied by remember { mutableStateOf(false) }
 
@@ -54,11 +58,14 @@ fun CodeBlockBubble(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFF090D16))
-            .border(
-                BorderStroke(1.dp, Color(0xFF1E293B)),
-                shape = RoundedCornerShape(14.dp)
+            .brutalCard(
+                cornerRadius = 12.dp,
+                containerColor = Color(0xFF090D16),
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = brutal.shadow,
+                shadowOffsetX = 3.dp,
+                shadowOffsetY = 3.dp
             )
     ) {
         Column {
@@ -73,17 +80,18 @@ fun CodeBlockBubble(
             ) {
                 Surface(
                     shape = RoundedCornerShape(6.dp),
-                    color = ElectricMint.copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, ElectricMint.copy(alpha = 0.3f))
+                    color = ElectricMint,
+                    border = BorderStroke(1.5.dp, BrutalInkBlack)
                 ) {
                     Text(
                         text = displayLang,
                         style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Black,
                             fontSize = 10.sp,
                             letterSpacing = 0.8.sp
                         ),
-                        color = ElectricMint,
+                        color = BrutalInkBlack,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }

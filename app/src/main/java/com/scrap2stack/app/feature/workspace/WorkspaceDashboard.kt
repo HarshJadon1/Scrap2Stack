@@ -176,10 +176,11 @@ fun WorkspaceDashboard(
         )
     }
 
+    val brutal = MaterialTheme.brutalColors
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BrutalCanvasDark)
+            .background(brutal.canvas)
             .dotGridBackground()
             .padding(horizontal = 20.dp)
             .verticalScroll(rememberScrollState())
@@ -313,6 +314,7 @@ fun WorkspaceDashboard(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // 3 Metric Cards Row
+                val brutal = MaterialTheme.brutalColors
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -323,10 +325,10 @@ fun WorkspaceDashboard(
                             .weight(1f)
                             .brutalCard(
                                 cornerRadius = 12.dp,
-                                containerColor = BrutalSurfaceRaised,
-                                borderColor = BrutalBorderWhite.copy(alpha = 0.8f),
+                                containerColor = brutal.surfaceRaised,
+                                borderColor = brutal.border,
                                 borderWidth = 1.5.dp,
-                                shadowColor = BrutalShadowBlack,
+                                shadowColor = brutal.shadow,
                                 shadowOffsetX = 3.dp,
                                 shadowOffsetY = 3.dp
                             )
@@ -339,18 +341,18 @@ fun WorkspaceDashboard(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold
                                 ),
-                                color = Color.White.copy(alpha = 0.65f)
+                                color = brutal.textMuted
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "${velocityMetrics.completedStoryPoints}/${velocityMetrics.totalStoryPoints}",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                                color = Color.White
+                                color = brutal.textPrimary
                             )
                             Text(
                                 text = "${velocityMetrics.progressPercent}% burned",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                color = ElectricMint
+                                color = brutal.accentOnSurface
                             )
                         }
                     }
@@ -361,10 +363,10 @@ fun WorkspaceDashboard(
                             .weight(1f)
                             .brutalCard(
                                 cornerRadius = 12.dp,
-                                containerColor = BrutalSurfaceRaised,
-                                borderColor = BrutalBorderWhite.copy(alpha = 0.8f),
+                                containerColor = brutal.surfaceRaised,
+                                borderColor = brutal.border,
                                 borderWidth = 1.5.dp,
-                                shadowColor = BrutalShadowBlack,
+                                shadowColor = brutal.shadow,
                                 shadowOffsetX = 3.dp,
                                 shadowOffsetY = 3.dp
                             )
@@ -377,18 +379,18 @@ fun WorkspaceDashboard(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold
                                 ),
-                                color = Color.White.copy(alpha = 0.65f)
+                                color = brutal.textMuted
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "${velocityMetrics.weeklyVelocityStoryPoints}",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                                color = Color.White
+                                color = brutal.textPrimary
                             )
                             Text(
                                 text = "pts / wk",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                color = AmberGold
+                                color = AmberGoldDark
                             )
                         }
                     }
@@ -399,10 +401,10 @@ fun WorkspaceDashboard(
                             .weight(1.1f)
                             .brutalCard(
                                 cornerRadius = 12.dp,
-                                containerColor = BrutalSurfaceRaised,
-                                borderColor = BrutalBorderWhite.copy(alpha = 0.8f),
+                                containerColor = brutal.surfaceRaised,
+                                borderColor = brutal.border,
                                 borderWidth = 1.5.dp,
-                                shadowColor = BrutalShadowBlack,
+                                shadowColor = brutal.shadow,
                                 shadowOffsetX = 3.dp,
                                 shadowOffsetY = 3.dp
                             )
@@ -415,18 +417,18 @@ fun WorkspaceDashboard(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold
                                 ),
-                                color = Color.White.copy(alpha = 0.65f)
+                                color = brutal.textMuted
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = if (isShipped) "Shipped 🚀" else "~${velocityMetrics.estimatedWeeksToShip}w",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                                color = if (isShipped) ElectricMint else PrimaryIndigoLight
+                                color = if (isShipped) brutal.accentOnSurface else MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 text = if (isShipped) "Live stack" else "80% CI: ${velocityMetrics.confidenceIntervalWeeks.first}-${velocityMetrics.confidenceIntervalWeeks.second}w",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                color = Color.White.copy(alpha = 0.6f),
+                                color = brutal.textMuted,
                                 maxLines = 1
                             )
                         }
@@ -491,8 +493,8 @@ fun WorkspaceDashboard(
                     .fillMaxWidth()
                     .brutalCard(
                         cornerRadius = 16.dp,
-                        containerColor = BrutalSurfaceDark,
-                        borderColor = ElectricMint,
+                        containerColor = brutal.surface,
+                        borderColor = brutal.border,
                         borderWidth = 2.dp,
                         shadowColor = ElectricMint,
                         shadowOffsetX = 4.dp,
@@ -524,13 +526,13 @@ fun WorkspaceDashboard(
                         Text(
                             text = "Shipped Stack Showcase Live",
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
-                            color = ElectricMint
+                            color = brutal.accentOnSurface
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "This repository has been successfully revived! It is actively showcased in the Community Stacks feed.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = brutal.textMuted
                         )
                     }
                 }
@@ -622,7 +624,7 @@ fun WorkspaceDashboard(
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
-                        tint = ElectricMint,
+                        tint = MaterialTheme.brutalColors.accentOnSurface,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -632,7 +634,7 @@ fun WorkspaceDashboard(
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Black
                         ),
-                        color = ElectricMint
+                        color = MaterialTheme.brutalColors.accentOnSurface
                     )
                 }
 

@@ -29,20 +29,15 @@ import androidx.compose.ui.unit.sp
 import com.scrap2stack.app.domain.model.Project
 import com.scrap2stack.app.domain.model.ProjectStatus
 import com.scrap2stack.app.ui.theme.AmberGold
-import com.scrap2stack.app.ui.theme.BrutalBorderWhite
 import com.scrap2stack.app.ui.theme.BrutalInkBlack
 import com.scrap2stack.app.ui.theme.BrutalShadowBlack
-import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
-import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
-import com.scrap2stack.app.ui.theme.NeonCyan
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
 import com.scrap2stack.app.ui.theme.PrimaryIndigoLight
-import com.scrap2stack.app.ui.theme.RevivalEmerald
-import com.scrap2stack.app.ui.theme.RevivalEmeraldLight
 import com.scrap2stack.app.ui.theme.StatusAbandoned
 import com.scrap2stack.app.ui.theme.StatusCompleted
 import com.scrap2stack.app.ui.theme.StatusReviving
+import com.scrap2stack.app.ui.theme.brutalColors
 
 @Composable
 fun ProjectCard(
@@ -50,6 +45,7 @@ fun ProjectCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val brutal = MaterialTheme.brutalColors
     var upvoteCount by remember(project.id) {
         val base = ((project.revivalScore * 7) % 35) + 12
         mutableIntStateOf(base)
@@ -62,8 +58,8 @@ fun ProjectCard(
             .padding(vertical = 6.dp)
             .tactileBrutalCard(
                 cornerRadius = 16.dp,
-                containerColor = BrutalSurfaceDark,
-                borderColor = BrutalBorderWhite,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
                 borderWidth = 2.dp,
                 shadowColor = if (project.status == ProjectStatus.COMPLETED) ElectricMint else PrimaryIndigo,
                 shadowOffsetX = 4.dp,
@@ -91,7 +87,7 @@ fun ProjectCard(
                             ),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            color = Color.White,
+                            color = brutal.textPrimary,
                             modifier = Modifier.weight(1f, fill = false)
                         )
                         if (project.status == ProjectStatus.COMPLETED) {
@@ -126,7 +122,7 @@ fun ProjectCard(
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = ElectricMint
+                        color = brutal.accentOnSurface
                     )
                 }
 
@@ -137,7 +133,7 @@ fun ProjectCard(
                     ProjectStatus.INCOMPLETE -> AmberGold
                     ProjectStatus.ABANDONED -> StatusAbandoned
                     ProjectStatus.PAUSED -> Color(0xFF94A3B8)
-                    ProjectStatus.MVP_INCOMPLETE -> ElectricMint
+                    ProjectStatus.MVP_INCOMPLETE -> brutal.accentOnSurface
                     ProjectStatus.REVIVING -> StatusReviving
                     ProjectStatus.COMPLETED -> StatusCompleted
                     ProjectStatus.INACTIVE -> Color(0xFF64748B)
@@ -155,7 +151,7 @@ fun ProjectCard(
                 ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                color = brutal.textPrimary.copy(alpha = 0.82f)
             )
 
             // Required Skills Badges
@@ -176,10 +172,10 @@ fun ProjectCard(
                                 .padding(bottom = 6.dp)
                                 .brutalCard(
                                     cornerRadius = 10.dp,
-                                    containerColor = BrutalSurfaceRaised,
-                                    borderColor = Color(0xFF475569),
+                                    containerColor = brutal.surfaceRaised,
+                                    borderColor = brutal.border,
                                     borderWidth = 1.5.dp,
-                                    shadowColor = BrutalShadowBlack,
+                                    shadowColor = brutal.shadow,
                                     shadowOffsetX = 2.dp,
                                     shadowOffsetY = 2.dp
                                 )
@@ -191,7 +187,7 @@ fun ProjectCard(
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Black
                                 ),
-                                color = Color.White.copy(alpha = 0.75f)
+                                color = brutal.textPrimary
                             )
                         }
                     }
@@ -201,7 +197,7 @@ fun ProjectCard(
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 12.dp),
                 thickness = 1.5.dp,
-                color = Color.White.copy(alpha = 0.14f)
+                color = brutal.border.copy(alpha = 0.16f)
             )
 
             // Footer: Revival Meter & Last Active Info
@@ -217,7 +213,7 @@ fun ProjectCard(
                             imageVector = Icons.Default.ElectricBolt,
                             contentDescription = null,
                             modifier = Modifier.size(13.dp),
-                            tint = ElectricMint
+                            tint = brutal.accentOnSurface
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
@@ -227,7 +223,7 @@ fun ProjectCard(
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                            color = brutal.textMuted
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
@@ -238,7 +234,7 @@ fun ProjectCard(
                                 fontWeight = FontWeight.Black,
                                 fontSize = 15.sp
                             ),
-                            color = ElectricMint
+                            color = brutal.accentOnSurface
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Box(
@@ -246,8 +242,8 @@ fun ProjectCard(
                                 .width(76.dp)
                                 .height(10.dp)
                                 .clip(RoundedCornerShape(5.dp))
-                                .background(BrutalSurfaceRaised)
-                                .border(1.5.dp, BrutalBorderWhite.copy(alpha = 0.7f), RoundedCornerShape(5.dp))
+                                .background(brutal.surfaceRaised)
+                                .border(1.5.dp, brutal.border, RoundedCornerShape(5.dp))
                         ) {
                             Box(
                                 modifier = Modifier
@@ -268,10 +264,10 @@ fun ProjectCard(
                         modifier = Modifier
                             .tactileBrutalCard(
                                 cornerRadius = 10.dp,
-                                containerColor = if (hasUpvoted) Color(0xFFEC4899) else BrutalSurfaceRaised,
-                                borderColor = if (hasUpvoted) BrutalShadowBlack else BrutalBorderWhite,
+                                containerColor = if (hasUpvoted) Color(0xFFEC4899) else brutal.surfaceRaised,
+                                borderColor = if (hasUpvoted) BrutalShadowBlack else brutal.border,
                                 borderWidth = 1.5.dp,
-                                shadowColor = BrutalShadowBlack,
+                                shadowColor = brutal.shadow,
                                 shadowOffsetX = 2.dp,
                                 shadowOffsetY = 2.dp,
                                 onClick = {
@@ -285,14 +281,14 @@ fun ProjectCard(
                             Icon(
                                 imageVector = if (hasUpvoted) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Upvote",
-                                tint = if (hasUpvoted) BrutalInkBlack else Color.White,
+                                tint = if (hasUpvoted) BrutalInkBlack else brutal.textPrimary,
                                 modifier = Modifier.size(13.dp)
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = "$upvoteCount",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = if (hasUpvoted) BrutalInkBlack else Color.White,
+                                    color = if (hasUpvoted) BrutalInkBlack else brutal.textPrimary,
                                     fontWeight = FontWeight.Black,
                                     fontSize = 11.sp
                                 )
@@ -306,13 +302,13 @@ fun ProjectCard(
                                 imageVector = Icons.Default.Schedule,
                                 contentDescription = null,
                                 modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                tint = brutal.textMuted
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "Last Active",
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                                color = brutal.textMuted
                             )
                         }
                         Spacer(modifier = Modifier.height(3.dp))
@@ -322,7 +318,7 @@ fun ProjectCard(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
                             ),
-                            color = Color.White
+                            color = brutal.textPrimary
                         )
                     }
                 }

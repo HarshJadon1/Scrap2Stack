@@ -39,7 +39,7 @@ class GitHubService {
         return if (segments.size >= 2) Pair(segments[0], segments[1]) else null
     }
 
-    suspend fun fetchRepoInfo(owner: String, repo: String): Result<GitHubRepoInfo> = withContext(Dispatchers.IO) {
+    suspend fun fetchRepoInfo(owner: String, repo: String): Result<LiveDataResult<GitHubRepoInfo>> = withContext(Dispatchers.IO) {
         try {
             val url = "https://api.github.com/repos/$owner/$repo"
             val response: HttpResponse = ktorClient.get(url) {
@@ -62,12 +62,24 @@ class GitHubService {
                     openIssues = obj["open_issues_count"]?.jsonPrimitive?.intOrNull ?: 0,
                     updatedAt = obj["updated_at"]?.jsonPrimitive?.contentOrNull ?: "Recently"
                 )
-                Result.success(repoInfo)
+                Result.success(LiveDataResult(data = repoInfo, isLiveData = true))
             } else {
-                Result.success(fallbackRepoInfo(owner, repo))
+                Result.success(
+                    LiveDataResult(
+                        data = fallbackRepoInfo(owner, repo),
+                        isLiveData = false,
+                        statusNote = "GitHub HTTP ${response.status.value} — showing cached preview"
+                    )
+                )
             }
         } catch (e: Exception) {
-            Result.success(fallbackRepoInfo(owner, repo))
+            Result.success(
+                LiveDataResult(
+                    data = fallbackRepoInfo(owner, repo),
+                    isLiveData = false,
+                    statusNote = "Offline — showing cached preview"
+                )
+            )
         }
     }
 
@@ -75,7 +87,7 @@ class GitHubService {
         owner: String,
         repo: String,
         projectId: String = ""
-    ): Result<List<GitHubContributionDto>> = withContext(Dispatchers.IO) {
+    ): Result<LiveDataResult<List<GitHubContributionDto>>> = withContext(Dispatchers.IO) {
         try {
             val url = "https://api.github.com/repos/$owner/$repo/commits?per_page=10"
             val response: HttpResponse = ktorClient.get(url) {
@@ -110,12 +122,24 @@ class GitHubService {
                         githubEventId = sha
                     )
                 }
-                Result.success(contributions)
+                Result.success(LiveDataResult(data = contributions, isLiveData = true))
             } else {
-                Result.success(fallbackCommits(projectId, owner, repo))
+                Result.success(
+                    LiveDataResult(
+                        data = fallbackCommits(projectId, owner, repo),
+                        isLiveData = false,
+                        statusNote = "GitHub HTTP ${response.status.value} — showing cached preview"
+                    )
+                )
             }
         } catch (e: Exception) {
-            Result.success(fallbackCommits(projectId, owner, repo))
+            Result.success(
+                LiveDataResult(
+                    data = fallbackCommits(projectId, owner, repo),
+                    isLiveData = false,
+                    statusNote = "Offline — showing cached preview"
+                )
+            )
         }
     }
 

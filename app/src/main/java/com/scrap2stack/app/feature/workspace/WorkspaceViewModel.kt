@@ -24,7 +24,9 @@ sealed class WorkspaceState {
         val tasks: List<Task>,
         val roadmapItems: List<RoadmapItem>,
         val members: List<ProjectMember>,
-        val isShipped: Boolean = false
+        val isShipped: Boolean = false,
+        val isRoadmapLiveData: Boolean = true,
+        val roadmapStatusNote: String? = null
     ) : WorkspaceState()
     data class Error(val message: String) : WorkspaceState()
 }
@@ -144,18 +146,22 @@ class WorkspaceViewModel(
                 techStack = targetTech,
                 problem = targetProblem
             )
-            result.onSuccess { generatedItems ->
+            result.onSuccess { live ->
                 val currentState = _uiState.value
                 if (currentState is WorkspaceState.Success) {
                     _uiState.value = currentState.copy(
-                        roadmapItems = generatedItems
+                        roadmapItems = live.data,
+                        isRoadmapLiveData = live.isLiveData,
+                        roadmapStatusNote = live.statusNote
                     )
                 } else {
                     _uiState.value = WorkspaceState.Success(
                         project = currentProject,
                         tasks = emptyList(),
-                        roadmapItems = generatedItems,
-                        members = emptyList()
+                        roadmapItems = live.data,
+                        members = emptyList(),
+                        isRoadmapLiveData = live.isLiveData,
+                        roadmapStatusNote = live.statusNote
                     )
                 }
             }

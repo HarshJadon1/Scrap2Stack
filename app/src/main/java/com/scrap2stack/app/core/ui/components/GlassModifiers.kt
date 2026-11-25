@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.drawBehind
@@ -29,13 +30,11 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.scrap2stack.app.ui.theme.BrutalBorderWhite
-import com.scrap2stack.app.ui.theme.BrutalShadowBlack
-import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
 import com.scrap2stack.app.ui.theme.GlassWhiteBorder
 import com.scrap2stack.app.ui.theme.GlassWhiteBorderSubtle
 import com.scrap2stack.app.ui.theme.ShimmerBaseDark
 import com.scrap2stack.app.ui.theme.ShimmerHighlightDark
+import com.scrap2stack.app.ui.theme.brutalColors
 
 /**
  * Applies a modern glassmorphic surface with dual-tone gradient border
@@ -121,7 +120,7 @@ fun Modifier.shimmerEffect(): Modifier = composed {
  */
 fun Modifier.brutalShadow(
     cornerRadius: Dp = 16.dp,
-    shadowColor: Color = BrutalShadowBlack,
+    shadowColor: Color = Color.Black,
     offsetX: Dp = 4.dp,
     offsetY: Dp = 4.dp
 ): Modifier = this.drawBehind {
@@ -136,44 +135,56 @@ fun Modifier.brutalShadow(
 
 /**
  * Applies a crisp Neo-Brutalist surface with hard 2dp border and solid offset shadow.
+ * Defaults adapt automatically to Light and Dark themes via [MaterialTheme.brutalColors].
  */
+@Composable
 fun Modifier.brutalCard(
     cornerRadius: Dp = 16.dp,
-    containerColor: Color = BrutalSurfaceDark,
-    borderColor: Color = BrutalBorderWhite,
+    containerColor: Color = Color.Unspecified,
+    borderColor: Color = Color.Unspecified,
     borderWidth: Dp = 2.dp,
-    shadowColor: Color = BrutalShadowBlack,
+    shadowColor: Color = Color.Unspecified,
     shadowOffsetX: Dp = 4.dp,
     shadowOffsetY: Dp = 4.dp
 ): Modifier {
+    val brutal = MaterialTheme.brutalColors
+    val resolvedContainer = if (containerColor == Color.Unspecified) brutal.surface else containerColor
+    val resolvedBorder = if (borderColor == Color.Unspecified) brutal.border else borderColor
+    val resolvedShadow = if (shadowColor == Color.Unspecified) brutal.shadow else shadowColor
     val shape = RoundedCornerShape(cornerRadius)
     return this
         .padding(end = shadowOffsetX, bottom = shadowOffsetY)
         .brutalShadow(
             cornerRadius = cornerRadius,
-            shadowColor = shadowColor,
+            shadowColor = resolvedShadow,
             offsetX = shadowOffsetX,
             offsetY = shadowOffsetY
         )
         .clip(shape)
-        .background(containerColor, shape)
-        .border(BorderStroke(borderWidth, borderColor), shape)
+        .background(resolvedContainer, shape)
+        .border(BorderStroke(borderWidth, resolvedBorder), shape)
 }
 
 /**
  * Interactive Neo-Brutalist surface that physically depresses toward its solid offset shadow on press.
+ * Defaults adapt automatically to Light and Dark themes via [MaterialTheme.brutalColors].
  */
+@Composable
 fun Modifier.tactileBrutalCard(
     cornerRadius: Dp = 16.dp,
-    containerColor: Color = BrutalSurfaceDark,
-    borderColor: Color = BrutalBorderWhite,
+    containerColor: Color = Color.Unspecified,
+    borderColor: Color = Color.Unspecified,
     borderWidth: Dp = 2.dp,
-    shadowColor: Color = BrutalShadowBlack,
+    shadowColor: Color = Color.Unspecified,
     shadowOffsetX: Dp = 4.dp,
     shadowOffsetY: Dp = 4.dp,
     enabled: Boolean = true,
     onClick: () -> Unit
-): Modifier = composed {
+): Modifier {
+    val brutal = MaterialTheme.brutalColors
+    val resolvedContainer = if (containerColor == Color.Unspecified) brutal.surface else containerColor
+    val resolvedBorder = if (borderColor == Color.Unspecified) brutal.border else borderColor
+    val resolvedShadow = if (shadowColor == Color.Unspecified) brutal.shadow else shadowColor
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -190,11 +201,11 @@ fun Modifier.tactileBrutalCard(
     val travelX = (shadowOffsetX - 1.dp).coerceAtLeast(1.dp)
     val travelY = (shadowOffsetY - 1.dp).coerceAtLeast(1.dp)
 
-    this
+    return this
         .padding(end = shadowOffsetX, bottom = shadowOffsetY)
         .brutalShadow(
             cornerRadius = cornerRadius,
-            shadowColor = shadowColor,
+            shadowColor = resolvedShadow,
             offsetX = shadowOffsetX,
             offsetY = shadowOffsetY
         )
@@ -209,32 +220,36 @@ fun Modifier.tactileBrutalCard(
             translationY = travelY.toPx() * pressFraction
         }
         .clip(shape)
-        .background(containerColor, shape)
-        .border(BorderStroke(borderWidth, borderColor), shape)
+        .background(resolvedContainer, shape)
+        .border(BorderStroke(borderWidth, resolvedBorder), shape)
 }
 
 /**
  * Draws a subtle dot-matrix hardware grid across the background canvas.
  */
+@Composable
 fun Modifier.dotGridBackground(
-    dotColor: Color = Color.White.copy(alpha = 0.055f),
+    dotColor: Color = Color.Unspecified,
     spacing: Dp = 18.dp,
     dotRadius: Dp = 1.dp
-): Modifier = this.drawBehind {
-    val step = spacing.toPx()
-    val radius = dotRadius.toPx()
-    if (step <= 0f) return@drawBehind
-    var x = step * 0.5f
-    while (x < size.width) {
-        var y = step * 0.5f
-        while (y < size.height) {
-            drawCircle(
-                color = dotColor,
-                radius = radius,
-                center = Offset(x, y)
-            )
-            y += step
+): Modifier {
+    val resolvedDot = if (dotColor == Color.Unspecified) MaterialTheme.brutalColors.dotGrid else dotColor
+    return this.drawBehind {
+        val step = spacing.toPx()
+        val radius = dotRadius.toPx()
+        if (step <= 0f) return@drawBehind
+        var x = step * 0.5f
+        while (x < size.width) {
+            var y = step * 0.5f
+            while (y < size.height) {
+                drawCircle(
+                    color = resolvedDot,
+                    radius = radius,
+                    center = Offset(x, y)
+                )
+                y += step
+            }
+            x += step
         }
-        x += step
     }
 }

@@ -230,7 +230,218 @@ DROP POLICY IF EXISTS "Public insert roadmap_items" ON public.roadmap_items;
 CREATE POLICY "Public select roadmap_items" ON public.roadmap_items FOR SELECT USING (true);
 CREATE POLICY "Public insert roadmap_items" ON public.roadmap_items FOR INSERT WITH CHECK (true);
 
--- 12. Add Realtime Publications for Live Sync (Chat, Tasks, Collab)
+-- 11b. Ensure `collaboration_requests` has `proposed_role` & create `notifications`
+ALTER TABLE public.collaboration_requests
+    ADD COLUMN IF NOT EXISTS proposed_role TEXT DEFAULT 'CONTRIBUTOR';
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'SYSTEM',
+    read BOOLEAN NOT NULL DEFAULT false,
+    reference_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public select notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Public insert notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Public update notifications" ON public.notifications;
+CREATE POLICY "Public select notifications" ON public.notifications FOR SELECT USING (true);
+CREATE POLICY "Public insert notifications" ON public.notifications FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public update notifications" ON public.notifications FOR UPDATE USING (true);
+
+-- 11c. Backend RPC Functions (Collaboration & Charm Rewards)
+CREATE OR REPLACE FUNCTION public.respond_to_collaboration(
+    req_id UUID,
+    response_status TEXT
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_req RECORD;
+    v_project_owner TEXT;
+    v_project_name TEXT;
+    v_new_member TEXT;
+    v_normalized_status TEXT;
+BEGIN
+    SELECT * INTO v_req FROM public.collaboration_requests WHERE id = req_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Collaboration request % not found', req_id;
+    END IF;
+
+    v_normalized_status := UPPER(COALESCE(response_status, 'PENDING'));
+    UPDATE public.collaboration_requests
+    SET status = v_normalized_status, updated_at = now()
+    WHERE id = req_id;
+
+    SELECT owner_id, name INTO v_project_owner, v_project_name
+    FROM public.projects
+    WHERE id::TEXT = v_req.project_id;
+
+    IF v_normalized_status = 'ACCEPTED' THEN
+        v_new_member := CASE
+            WHEN v_req.sender_id = v_project_owner THEN v_req.receiver_id
+            ELSE v_req.sender_id
+        END;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM public.project_members
+            WHERE project_id = v_req.project_id AND user_id = v_new_member
+        ) THEN
+            INSERT INTO public.project_members (project_id, user_id, role)
+            VALUES (
+                v_req.project_id,
+                v_new_member,
+                LOWER(COALESCE(NULLIF(v_req.proposed_role, ''), 'contributor'))
+            );
+        END IF;
+
+        IF v_req.sender_id ~ '^[0-9a-fA-F-]{36}$' THEN
+            INSERT INTO public.notifications (user_id, title, content, type, reference_id)
+            VALUES (
+                v_req.sender_id::UUID,
+                'Collaboration Accepted',
+                'Your request for ' || COALESCE(v_project_name, 'project') || ' was accepted.',
+                'COLLABORATION',
+                v_req.project_id
+            );
+        END IF;
+    END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.award_task_completion_charms(
+    p_task_id UUID,
+    p_project_id UUID
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_uid UUID := auth.uid();
+    v_uid_text TEXT := auth.uid()::TEXT;
+    v_project_name TEXT;
+BEGIN
+    IF v_uid IS NULL THEN
+        RETURN;
+    END IF;
+
+    SELECT name INTO v_project_name FROM public.projects WHERE id = p_project_id;
+
+    INSERT INTO public.user_charms (user_id, project_id, charms, contribution_type, description, reference_id)
+    VALUES (
+        v_uid_text,
+        p_project_id::TEXT,
+        10,
+        'TASK_COMPLETION',
+        'Completed task in ' || COALESCE(v_project_name, 'workspace'),
+        p_task_id::TEXT
+    );
+
+    UPDATE public.profiles
+    SET charms = COALESCE(charms, 0) + 10
+    WHERE id = v_uid_text;
+
+    INSERT INTO public.notifications (user_id, title, content, type, reference_id)
+    VALUES (
+        v_uid,
+        '+10 Charms Earned',
+        'Task completed in ' || COALESCE(v_project_name, 'workspace') || '.',
+        'CHARMS',
+        p_project_id::TEXT
+    );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.award_project_revived_charms(
+    p_project_id UUID
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_uid UUID := auth.uid();
+    v_uid_text TEXT := auth.uid()::TEXT;
+    v_project_name TEXT;
+BEGIN
+    IF v_uid IS NULL THEN
+        RETURN;
+    END IF;
+
+    SELECT name INTO v_project_name FROM public.projects WHERE id = p_project_id;
+
+    INSERT INTO public.user_charms (user_id, project_id, charms, contribution_type, description, reference_id)
+    VALUES (
+        v_uid_text,
+        p_project_id::TEXT,
+        50,
+        'PROJECT_REVIVED',
+        'Initiated revival for ' || COALESCE(v_project_name, 'project'),
+        p_project_id::TEXT
+    );
+
+    UPDATE public.profiles
+    SET charms = COALESCE(charms, 0) + 50
+    WHERE id = v_uid_text;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.award_project_shipped_charms(
+    p_project_id UUID
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_member RECORD;
+    v_project_name TEXT;
+BEGIN
+    SELECT name INTO v_project_name FROM public.projects WHERE id = p_project_id;
+
+    FOR v_member IN
+        SELECT DISTINCT user_id FROM public.project_members WHERE project_id = p_project_id::TEXT
+    LOOP
+        INSERT INTO public.user_charms (user_id, project_id, charms, contribution_type, description, reference_id)
+        VALUES (
+            v_member.user_id,
+            p_project_id::TEXT,
+            100,
+            'PROJECT_SHIPPED',
+            'Shipped ' || COALESCE(v_project_name, 'project') || ' to Showcase!',
+            p_project_id::TEXT
+        );
+
+        UPDATE public.profiles
+        SET charms = COALESCE(charms, 0) + 100
+        WHERE id = v_member.user_id;
+
+        IF v_member.user_id ~ '^[0-9a-fA-F-]{36}$' THEN
+            INSERT INTO public.notifications (user_id, title, content, type, reference_id)
+            VALUES (
+                v_member.user_id::UUID,
+                '+100 Charms: Project Shipped!',
+                COALESCE(v_project_name, 'Project') || ' was published to Showcase.',
+                'MILESTONE',
+                p_project_id::TEXT
+            );
+        END IF;
+    END LOOP;
+END;
+$$;
+
+-- 12. Add Realtime Publications for Live Sync (Chat, Tasks, Collab, Notifications)
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'chat_messages') THEN
@@ -241,6 +452,9 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'collaboration_requests') THEN
         ALTER PUBLICATION supabase_realtime ADD TABLE public.collaboration_requests;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'notifications') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
     END IF;
 EXCEPTION
     WHEN others THEN NULL;

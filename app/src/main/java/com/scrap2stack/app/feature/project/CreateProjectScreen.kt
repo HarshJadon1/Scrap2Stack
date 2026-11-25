@@ -1,22 +1,32 @@
 package com.scrap2stack.app.feature.project
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.network.GitHubService
+import com.scrap2stack.app.core.ui.components.BrutalHeaderTag
+import com.scrap2stack.app.core.ui.components.BrutalTopBar
 import com.scrap2stack.app.core.ui.components.Scrap2StackButton
+import com.scrap2stack.app.core.ui.components.brutalCard
+import com.scrap2stack.app.core.ui.components.brutalTextFieldColors
+import com.scrap2stack.app.core.ui.components.dotGridBackground
+import com.scrap2stack.app.core.ui.components.tactileBrutalCard
 import com.scrap2stack.app.domain.model.ProjectStatus
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.ElectricMint
+import com.scrap2stack.app.ui.theme.PrimaryIndigo
+import com.scrap2stack.app.ui.theme.brutalColors
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,6 +36,8 @@ fun CreateProjectScreen(
     onNavigateBack: () -> Unit,
     onProjectCreated: (String) -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
+    val fieldColors = brutalTextFieldColors()
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var problem by remember { mutableStateOf("") }
@@ -56,15 +68,13 @@ fun CreateProjectScreen(
     }
 
     Scaffold(
+        containerColor = brutal.canvas,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Create Project") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
+            BrutalTopBar(
+                tag = "NEW // STACK",
+                title = "Create Project",
+                onNavigateBack = onNavigateBack
             )
         }
     ) { innerPadding ->
@@ -72,26 +82,33 @@ fun CreateProjectScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 24.dp)
+                .dotGridBackground()
+                .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "Give your idea a second life",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                modifier = Modifier.padding(bottom = 16.dp)
+                color = brutal.textMuted,
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 16.dp)
             )
 
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 20.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                    .padding(bottom = 20.dp)
+                    .brutalCard(
+                        cornerRadius = 16.dp,
+                        containerColor = brutal.surface,
+                        borderColor = brutal.border,
+                        borderWidth = 2.dp,
+                        shadowColor = PrimaryIndigo,
+                        shadowOffsetX = 4.dp,
+                        shadowOffsetY = 4.dp
+                    )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -101,20 +118,19 @@ fun CreateProjectScreen(
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = brutal.accentOnSurface
                         )
                         Text(
                             text = "Auto-Fill with GitHub & AI",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
+                            color = brutal.textPrimary
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Paste your GitHub repository to auto-fill title, description & tech stack.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = brutal.textMuted
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
@@ -128,67 +144,87 @@ fun CreateProjectScreen(
                             placeholder = { Text("https://github.com/owner/repo", style = MaterialTheme.typography.bodySmall) },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = fieldColors
                         )
-                        Button(
-                            onClick = {
-                                val parsed = gitHubService.parseRepoUrl(githubUrl)
-                                if (parsed == null) {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Please enter a valid GitHub repository URL")
-                                    }
-                                } else {
-                                    isFetchingRepo = true
-                                    coroutineScope.launch {
-                                        val (owner, repo) = parsed
-                                        val result = gitHubService.fetchRepoInfo(owner, repo)
-                                        result.onSuccess { info ->
-                                            if (name.isBlank() || name == "New Project") {
-                                                name = info.name.replace("-", " ").replace("_", " ").split(" ")
-                                                    .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+                        val canFetch = !isFetchingRepo && githubUrl.isNotBlank()
+                        Box(
+                            modifier = Modifier
+                                .height(52.dp)
+                                .tactileBrutalCard(
+                                    cornerRadius = 12.dp,
+                                    containerColor = if (canFetch) ElectricMint else brutal.surfaceRaised,
+                                    borderColor = brutal.border,
+                                    borderWidth = 2.dp,
+                                    shadowColor = BrutalShadowBlack,
+                                    shadowOffsetX = 3.dp,
+                                    shadowOffsetY = 3.dp,
+                                    enabled = canFetch,
+                                    onClick = {
+                                        val parsed = gitHubService.parseRepoUrl(githubUrl)
+                                        if (parsed == null) {
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar("Please enter a valid GitHub repository URL")
                                             }
-                                            if (description.isBlank() && !info.description.isNullOrBlank()) {
-                                                description = info.description
+                                        } else {
+                                            isFetchingRepo = true
+                                            coroutineScope.launch {
+                                                val (owner, repo) = parsed
+                                                val result = gitHubService.fetchRepoInfo(owner, repo)
+                                                result.onSuccess { live ->
+                                                    val info = live.data
+                                                    if (name.isBlank() || name == "New Project") {
+                                                        name = info.name.replace("-", " ").replace("_", " ").split(" ")
+                                                            .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+                                                    }
+                                                    if (description.isBlank() && !info.description.isNullOrBlank()) {
+                                                        description = info.description
+                                                    }
+                                                    if (problem.isBlank()) {
+                                                        problem = "Project was abandoned and needs revival, modern refactoring, and active contributors."
+                                                    }
+                                                    val primaryLang = info.primaryLanguage?.takeIf { it.isNotBlank() } ?: "Kotlin"
+                                                    if (technologies.isBlank()) {
+                                                        technologies = "$primaryLang, GitHub"
+                                                    }
+                                                    if (skills.isBlank()) {
+                                                        skills = "$primaryLang Developer, Maintainer"
+                                                    }
+                                                    val lang = primaryLang.lowercase()
+                                                    category = when {
+                                                        lang.contains("kotlin") || lang.contains("swift") || lang.contains("dart") || lang.contains("flutter") -> "Mobile"
+                                                        lang.contains("python") || lang.contains("ai") || lang.contains("jupyter") -> "AI/ML"
+                                                        lang.contains("go") || lang.contains("docker") || lang.contains("shell") -> "DevOps"
+                                                        else -> "Web"
+                                                    }
+                                                    val msg = if (live.isLiveData) "⚡ Repository details auto-filled!" else "⚠ ${live.statusNote ?: "Auto-filled cached template"}"
+                                                    snackbarHostState.showSnackbar(msg)
+                                                }.onFailure {
+                                                    snackbarHostState.showSnackbar("Could not fetch repo: ${it.localizedMessage}")
+                                                }
+                                                isFetchingRepo = false
                                             }
-                                            if (problem.isBlank()) {
-                                                problem = "Project was abandoned and needs revival, modern refactoring, and active contributors."
-                                            }
-                                            val primaryLang = info.primaryLanguage?.takeIf { it.isNotBlank() } ?: "Kotlin"
-                                            if (technologies.isBlank()) {
-                                                technologies = "$primaryLang, GitHub"
-                                            }
-                                            if (skills.isBlank()) {
-                                                skills = "$primaryLang Developer, Maintainer"
-                                            }
-                                            val lang = primaryLang.lowercase()
-                                            if (lang.contains("kotlin") || lang.contains("swift") || lang.contains("dart") || lang.contains("flutter")) {
-                                                category = "Mobile"
-                                            } else if (lang.contains("python") || lang.contains("ai") || lang.contains("jupyter")) {
-                                                category = "AI/ML"
-                                            } else if (lang.contains("go") || lang.contains("docker") || lang.contains("shell")) {
-                                                category = "DevOps"
-                                            } else {
-                                                category = "Web"
-                                            }
-                                            snackbarHostState.showSnackbar("⚡ Repository details auto-filled!")
-                                        }.onFailure {
-                                            snackbarHostState.showSnackbar("Could not fetch repo: ${it.localizedMessage}")
                                         }
-                                        isFetchingRepo = false
                                     }
-                                }
-                            },
-                            enabled = !isFetchingRepo && githubUrl.isNotBlank(),
-                            shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             if (isFetchingRepo) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary
+                                    color = BrutalInkBlack
                                 )
                             } else {
-                                Text("Auto-Fill")
+                                Text(
+                                    "AUTO",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.Black
+                                    ),
+                                    color = if (canFetch) BrutalInkBlack else brutal.textMuted
+                                )
                             }
                         }
                     }
@@ -200,52 +236,65 @@ fun CreateProjectScreen(
                 onValueChange = { name = it },
                 label = { Text("Project Name *") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Short Description *") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 2
+                minLines = 2,
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             OutlinedTextField(
                 value = problem,
                 onValueChange = { problem = it },
                 label = { Text("The Problem (Why it was abandoned?) *") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 3
+                minLines = 3,
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             OutlinedTextField(
                 value = technologies,
                 onValueChange = { technologies = it },
                 label = { Text("Technologies (Comma separated) *") },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("e.g. Kotlin, Python, React") }
+                placeholder = { Text("e.g. Kotlin, Python, React") },
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             OutlinedTextField(
                 value = skills,
                 onValueChange = { skills = it },
                 label = { Text("Required Skills (Comma separated) *") },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("e.g. Machine Learning, UI Design") }
+                placeholder = { Text("e.g. Machine Learning, UI Design") },
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Category", style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.Start))
+            BrutalHeaderTag(
+                text = "CATEGORY",
+                modifier = Modifier.align(Alignment.Start)
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -253,31 +302,51 @@ fun CreateProjectScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf("Web", "Mobile", "AI/ML", "DevOps").forEach { cat ->
-                    FilterChip(
-                        selected = category == cat,
-                        onClick = { category = cat },
-                        label = { Text(cat) }
-                    )
+                    val isSelected = category == cat
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = if (isSelected) ElectricMint else brutal.surface,
+                                borderColor = brutal.border,
+                                borderWidth = 2.dp,
+                                shadowColor = brutal.shadow,
+                                shadowOffsetX = 2.dp,
+                                shadowOffsetY = 2.dp,
+                                onClick = { category = cat }
+                            )
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            cat,
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Black),
+                            color = if (isSelected) BrutalInkBlack else brutal.textPrimary
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             OutlinedTextField(
                 value = githubUrl,
                 onValueChange = { githubUrl = it },
                 label = { Text("GitHub Repository URL (Optional)") },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("https://github.com/user/project") }
+                placeholder = { Text("https://github.com/user/project") },
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             if (uiState is CreateProjectUiState.Loading) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = brutal.accentOnSurface)
             } else {
                 Scrap2StackButton(
-                    text = "Create Project",
+                    text = "CREATE PROJECT",
                     onClick = {
                         val techList = technologies.split(",").map { it.trim() }.filter { it.isNotBlank() }
                         val skillList = skills.split(",").map { it.trim() }.filter { it.isNotBlank() }
@@ -297,7 +366,7 @@ fun CreateProjectScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(28.dp))
         }
     }
 }

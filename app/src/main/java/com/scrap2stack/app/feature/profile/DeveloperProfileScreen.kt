@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Public
@@ -15,10 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.domain.model.Developer
+import com.scrap2stack.app.ui.theme.PrimaryIndigo
+import com.scrap2stack.app.ui.theme.brutalColors
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -28,6 +30,7 @@ fun DeveloperProfileScreen(
     onNavigateBack: () -> Unit,
     onRequestCollaboration: () -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(developerId) {
@@ -35,21 +38,27 @@ fun DeveloperProfileScreen(
     }
 
     Scaffold(
+        containerColor = brutal.canvas,
         topBar = {
-            TopAppBar(
-                title = { Text("Developer Profile") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
+            BrutalTopBar(
+                tag = "DEV // DOSSIER",
+                title = "Developer Profile",
+                onNavigateBack = onNavigateBack
             )
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .dotGridBackground()
+        ) {
             when (val state = uiState) {
                 is DeveloperProfileUiState.Loading -> LoadingView()
-                is DeveloperProfileUiState.Error -> ErrorView(message = state.message, onRetry = { viewModel.loadDeveloperProfile(developerId) })
+                is DeveloperProfileUiState.Error -> ErrorView(
+                    message = state.message,
+                    onRetry = { viewModel.loadDeveloperProfile(developerId) }
+                )
                 is DeveloperProfileUiState.Success -> {
                     DeveloperProfileContent(
                         developer = state.developer,
@@ -67,6 +76,7 @@ private fun DeveloperProfileContent(
     developer: Developer,
     onRequestCollaboration: () -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     val uriHandler = LocalUriHandler.current
 
     val openUrl = { url: String ->
@@ -87,55 +97,96 @@ private fun DeveloperProfileContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 20.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Spacer(modifier = Modifier.height(14.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .brutalCard(
+                    cornerRadius = 18.dp,
+                    containerColor = brutal.surface,
+                    borderColor = brutal.border,
+                    borderWidth = 2.dp,
+                    shadowColor = brutal.shadow,
+                    shadowOffsetX = 4.dp,
+                    shadowOffsetY = 4.dp
+                )
+                .padding(20.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Avatar(name = developer.name, modifier = Modifier.size(100.dp))
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = developer.name,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = if (developer.username.isNotBlank()) "@${developer.username}" else "No username",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Avatar(name = developer.name, modifier = Modifier.size(88.dp))
+                Spacer(modifier = Modifier.height(14.dp))
+                Text(
+                    text = developer.name,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                    color = brutal.textPrimary
+                )
+                Text(
+                    text = if (developer.username.isNotBlank()) "@${developer.username}" else "No username",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = brutal.accentOnSurface
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
         if (developer.bio.isNotBlank()) {
-            Text("Bio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(
-                text = developer.bio,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .brutalCard(
+                        cornerRadius = 14.dp,
+                        containerColor = brutal.surface,
+                        borderColor = brutal.border,
+                        borderWidth = 2.dp,
+                        shadowColor = brutal.shadow,
+                        shadowOffsetX = 3.dp,
+                        shadowOffsetY = 3.dp
+                    )
+                    .padding(16.dp)
+            ) {
+                Column {
+                    BrutalHeaderTag(text = "BIO")
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = developer.bio,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = brutal.textPrimary
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ProfileStatItem(label = "Charms", value = developer.charms.toString())
-            ProfileStatItem(label = "Experience", value = developer.experienceLevel.name.lowercase().replaceFirstChar { it.uppercase() })
+            ScoreCard(
+                label = "Total Charms",
+                score = developer.charms.toString(),
+                modifier = Modifier.weight(1f)
+            )
+            ScoreCard(
+                label = "Experience",
+                score = developer.experienceLevel.name.lowercase().replaceFirstChar { it.uppercase() },
+                modifier = Modifier.weight(1f)
+            )
         }
 
         if (developer.skills.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Skills", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(20.dp))
+            SectionHeader(title = "Skills")
             Row(
-                modifier = Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()),
+                modifier = Modifier.padding(vertical = 4.dp).horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 developer.skills.forEach { skill ->
@@ -146,46 +197,54 @@ private fun DeveloperProfileContent(
 
         if (developer.interests.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Interests", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            SectionHeader(title = "Interests")
             Row(
-                modifier = Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()),
+                modifier = Modifier.padding(vertical = 4.dp).horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 developer.interests.forEach { interest ->
-                    SuggestionChip(onClick = {}, label = { Text(interest) })
+                    BrutalBadge(
+                        text = interest,
+                        containerColor = brutal.surfaceRaised,
+                        contentColor = brutal.textPrimary,
+                        borderColor = brutal.border
+                    )
                 }
             }
         }
 
         if (developer.githubUrl.isNotBlank() || developer.linkedinUrl.isNotBlank() || developer.portfolioUrl.isNotBlank()) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Social & Portfolio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            
+            Spacer(modifier = Modifier.height(20.dp))
+            SectionHeader(title = "Social & Portfolio")
+
             Spacer(modifier = Modifier.height(8.dp))
 
             if (developer.githubUrl.isNotBlank()) {
                 SocialLinkItem(icon = Icons.Default.Code, label = "GitHub", value = developer.githubUrl)
+                Spacer(modifier = Modifier.height(8.dp))
             }
             if (developer.linkedinUrl.isNotBlank()) {
                 SocialLinkItem(icon = Icons.Default.Link, label = "LinkedIn", value = developer.linkedinUrl)
+                Spacer(modifier = Modifier.height(8.dp))
             }
             if (developer.portfolioUrl.isNotBlank()) {
                 SocialLinkItem(icon = Icons.Default.Public, label = "Portfolio", value = developer.portfolioUrl)
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Scrap2StackButton(
-            text = "Invite to Collaborate",
+            text = "INVITE TO COLLABORATE",
             onClick = onRequestCollaboration
         )
-        
+
         if (developer.githubUrl.isNotBlank()) {
             Spacer(modifier = Modifier.height(12.dp))
             Scrap2StackOutlinedButton(
-                text = "View GitHub Profile",
-                onClick = { openUrl(developer.githubUrl) }
+                text = "VIEW GITHUB PROFILE",
+                onClick = { openUrl(developer.githubUrl) },
+                shadowColor = PrimaryIndigo
             )
         }
 

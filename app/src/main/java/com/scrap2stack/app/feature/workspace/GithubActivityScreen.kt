@@ -29,12 +29,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scrap2stack.app.core.network.GitHubService
-import com.scrap2stack.app.core.ui.components.bouncingClickable
-import com.scrap2stack.app.core.ui.components.glassSurface
+import com.scrap2stack.app.core.ui.components.BrutalBadge
+import com.scrap2stack.app.core.ui.components.brutalCard
+import com.scrap2stack.app.core.ui.components.dotGridBackground
+import com.scrap2stack.app.core.ui.components.tactileBrutalCard
 import com.scrap2stack.app.data.remote.dto.GitHubContributionDto
 import com.scrap2stack.app.domain.model.GitHubRepoInfo
+import com.scrap2stack.app.ui.theme.AmberGold
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
 import com.scrap2stack.app.ui.theme.ElectricMint
-import com.scrap2stack.app.ui.theme.GlassWhiteBorder
+import com.scrap2stack.app.ui.theme.PrimaryIndigo
+import com.scrap2stack.app.ui.theme.brutalColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -44,12 +50,15 @@ fun GithubActivityScreen(
     contributions: List<GitHubContributionDto> = emptyList(),
     onSync: () -> Unit = {}
 ) {
+    val brutal = MaterialTheme.brutalColors
     val gitHubService = remember { GitHubService() }
     val uriHandler = LocalUriHandler.current
     val coroutineScope = rememberCoroutineScope()
 
     var repoInfo by remember { mutableStateOf<GitHubRepoInfo?>(null) }
     var commitFeed by remember { mutableStateOf<List<GitHubContributionDto>>(contributions) }
+    var isLiveRepoData by remember { mutableStateOf(true) }
+    var repoStatusNote by remember { mutableStateOf<String?>(null) }
     var isSyncing by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("ALL") }
 
@@ -61,10 +70,20 @@ fun GithubActivityScreen(
         isSyncing = true
         coroutineScope.launch {
             val infoResult = gitHubService.fetchRepoInfo(parsedRepo.first, parsedRepo.second)
-            infoResult.onSuccess { repoInfo = it }
+            infoResult.onSuccess { live ->
+                repoInfo = live.data
+                isLiveRepoData = live.isLiveData
+                repoStatusNote = live.statusNote
+            }
 
             val commitsResult = gitHubService.fetchRecentCommits(parsedRepo.first, parsedRepo.second, projectId)
-            commitsResult.onSuccess { commitFeed = it }
+            commitsResult.onSuccess { live ->
+                commitFeed = live.data
+                if (!live.isLiveData) {
+                    isLiveRepoData = false
+                    repoStatusNote = live.statusNote ?: repoStatusNote
+                }
+            }
             isSyncing = false
         }
     }
@@ -81,21 +100,30 @@ fun GithubActivityScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF080B11))
+            .background(brutal.canvas)
+            .dotGridBackground()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Repo Overview Header Card
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .glassSurface(shape = RoundedCornerShape(22.dp))
-                    .padding(18.dp)
+                    .brutalCard(
+                        cornerRadius = 16.dp,
+                        containerColor = brutal.surface,
+                        borderColor = brutal.border,
+                        borderWidth = 2.dp,
+                        shadowColor = PrimaryIndigo,
+                        shadowOffsetX = 4.dp,
+                        shadowOffsetY = 4.dp
+                    )
+                    .padding(16.dp)
             ) {
                 Column {
                     Row(
@@ -103,18 +131,25 @@ fun GithubActivityScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                             Box(
                                 modifier = Modifier
                                     .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.1f)),
+                                    .brutalCard(
+                                        cornerRadius = 10.dp,
+                                        containerColor = ElectricMint,
+                                        borderColor = BrutalShadowBlack,
+                                        borderWidth = 1.5.dp,
+                                        shadowColor = BrutalShadowBlack,
+                                        shadowOffsetX = 2.dp,
+                                        shadowOffsetY = 2.dp
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Code,
                                     contentDescription = null,
-                                    tint = ElectricMint,
+                                    tint = BrutalInkBlack,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -123,8 +158,8 @@ fun GithubActivityScreen(
                                 Text(
                                     text = "${parsedRepo.first}/${parsedRepo.second}",
                                     style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        fontWeight = FontWeight.Black,
+                                        color = brutal.textPrimary
                                     ),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -132,8 +167,9 @@ fun GithubActivityScreen(
                                 Text(
                                     text = "Branch: ${repoInfo?.defaultBranch ?: "master"} • ${repoInfo?.primaryLanguage ?: "Kotlin"}",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        color = ElectricMint,
-                                        fontWeight = FontWeight.SemiBold
+                                        fontFamily = FontFamily.Monospace,
+                                        color = brutal.accentOnSurface,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 )
                             }
@@ -142,33 +178,66 @@ fun GithubActivityScreen(
                         // Live Sync Button
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(ElectricMint.copy(alpha = 0.15f))
-                                .border(1.dp, ElectricMint.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-                            .bouncingClickable(enabled = !isSyncing) {
-                                isSyncing = true
-                                onSync()
-                                coroutineScope.launch {
-                                    val commitsResult = gitHubService.fetchRecentCommits(parsedRepo.first, parsedRepo.second, projectId)
-                                    commitsResult.onSuccess { commitFeed = it }
-                                    isSyncing = false
-                                }
-                            }
-                            .padding(8.dp),
+                                .size(38.dp)
+                                .tactileBrutalCard(
+                                    cornerRadius = 10.dp,
+                                    containerColor = brutal.surfaceRaised,
+                                    borderColor = brutal.border,
+                                    borderWidth = 1.5.dp,
+                                    shadowColor = ElectricMint,
+                                    shadowOffsetX = 2.dp,
+                                    shadowOffsetY = 2.dp,
+                                    enabled = !isSyncing,
+                                    onClick = {
+                                        isSyncing = true
+                                        onSync()
+                                        coroutineScope.launch {
+                                            val commitsResult = gitHubService.fetchRecentCommits(parsedRepo.first, parsedRepo.second, projectId)
+                                            commitsResult.onSuccess { live ->
+                                                commitFeed = live.data
+                                                isLiveRepoData = live.isLiveData
+                                                repoStatusNote = live.statusNote
+                                            }
+                                            isSyncing = false
+                                        }
+                                    }
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             if (isSyncing) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
-                                    color = ElectricMint
+                                    color = brutal.accentOnSurface
                                 )
                             } else {
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
                                     contentDescription = "Sync",
-                                    tint = ElectricMint,
+                                    tint = brutal.accentOnSurface,
                                     modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    if (!isLiveRepoData) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            BrutalBadge(
+                                text = "CACHED PREVIEW",
+                                containerColor = AmberGold,
+                                contentColor = BrutalInkBlack,
+                                borderColor = brutal.border
+                            )
+                            if (!repoStatusNote.isNullOrBlank()) {
+                                Text(
+                                    text = repoStatusNote ?: "",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = brutal.textMuted
                                 )
                             }
                         }
@@ -215,18 +284,26 @@ fun GithubActivityScreen(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (isSelected) ElectricMint.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f))
-                            .border(1.dp, if (isSelected) ElectricMint else GlassWhiteBorder, RoundedCornerShape(12.dp))
-                            .bouncingClickable { selectedFilter = key }
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = if (isSelected) ElectricMint else brutal.surfaceRaised,
+                                borderColor = if (isSelected) BrutalShadowBlack else brutal.border,
+                                borderWidth = 1.5.dp,
+                                shadowColor = if (isSelected) PrimaryIndigo else brutal.shadow,
+                                shadowOffsetX = 2.dp,
+                                shadowOffsetY = 2.dp,
+                                onClick = { selectedFilter = key }
+                            )
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = label,
+                            text = label.uppercase(),
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = if (isSelected) ElectricMint else Color(0xFF94A3B8),
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                fontFamily = FontFamily.Monospace,
+                                color = if (isSelected) BrutalInkBlack else brutal.textPrimary,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 10.sp
                             )
                         )
                     }
@@ -265,20 +342,27 @@ fun RepoStatPill(
     value: String,
     accent: Color
 ) {
+    val brutal = MaterialTheme.brutalColors
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color.White.copy(alpha = 0.05f))
-            .border(0.5.dp, GlassWhiteBorder, RoundedCornerShape(14.dp))
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .brutalCard(
+                cornerRadius = 10.dp,
+                containerColor = brutal.surfaceRaised,
+                borderColor = brutal.border,
+                borderWidth = 1.5.dp,
+                shadowColor = brutal.shadow,
+                shadowOffsetX = 2.dp,
+                shadowOffsetY = 2.dp
+            )
+            .padding(horizontal = 12.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(imageVector = icon, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
             Column(horizontalAlignment = Alignment.Start) {
-                Text(text = value, style = MaterialTheme.typography.labelLarge.copy(color = Color.White, fontWeight = FontWeight.Bold))
-                Text(text = label, style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF64748B), fontSize = 10.sp))
+                Text(text = value, style = MaterialTheme.typography.labelLarge.copy(color = brutal.textPrimary, fontWeight = FontWeight.Black))
+                Text(text = label.uppercase(), style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace, color = brutal.textMuted, fontSize = 9.sp))
             }
         }
     }
@@ -289,6 +373,7 @@ fun GithubCommitCard(
     contribution: GitHubContributionDto,
     onOpen: () -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     val isPr = contribution.type.contains("PULL_REQUEST")
     val isIssue = contribution.type.contains("ISSUE")
 
@@ -307,8 +392,16 @@ fun GithubCommitCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glassSurface(shape = RoundedCornerShape(16.dp))
-            .bouncingClickable { onOpen() }
+            .tactileBrutalCard(
+                cornerRadius = 14.dp,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = typeColor,
+                shadowOffsetX = 3.dp,
+                shadowOffsetY = 3.dp,
+                onClick = onOpen
+            )
             .padding(14.dp)
     ) {
         Row(
@@ -318,14 +411,21 @@ fun GithubCommitCard(
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .clip(CircleShape)
-                    .background(typeColor.copy(alpha = 0.15f)),
+                    .brutalCard(
+                        cornerRadius = 10.dp,
+                        containerColor = typeColor,
+                        borderColor = BrutalShadowBlack,
+                        borderWidth = 1.5.dp,
+                        shadowColor = BrutalShadowBlack,
+                        shadowOffsetX = 2.dp,
+                        shadowOffsetY = 2.dp
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = typeColor,
+                    tint = BrutalInkBlack,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -336,27 +436,28 @@ fun GithubCommitCard(
                 Text(
                     text = contribution.title,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        fontWeight = FontWeight.Bold,
+                        color = brutal.textPrimary
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // SHA tag
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(Color.White.copy(alpha = 0.08f))
+                            .background(brutal.surfaceRaised)
+                            .border(1.dp, brutal.border.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = contribution.githubEventId.ifEmpty { contribution.id }.take(7),
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = Color(0xFF94A3B8),
+                                color = brutal.textPrimary,
                                 fontFamily = FontFamily.Monospace,
-                                fontSize = 10.sp
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         )
                     }
@@ -364,7 +465,7 @@ fun GithubCommitCard(
                     Text(
                         text = contribution.contributionDate,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = Color(0xFF64748B),
+                            color = brutal.textMuted,
                             fontSize = 11.sp
                         )
                     )
@@ -376,7 +477,7 @@ fun GithubCommitCard(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = "Open in browser",
-                tint = Color(0xFF475569),
+                tint = brutal.textPrimary,
                 modifier = Modifier.size(16.dp)
             )
         }

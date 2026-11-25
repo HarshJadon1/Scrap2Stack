@@ -34,7 +34,8 @@ $tables = @(
     "collaboration_requests", 
     "project_members", 
     "roadmaps",
-    "roadmap_items"
+    "roadmap_items",
+    "notifications"
 )
 
 $passed = 0

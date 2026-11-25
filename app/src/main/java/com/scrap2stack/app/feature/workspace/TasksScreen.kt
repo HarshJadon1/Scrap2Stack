@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,12 +36,14 @@ import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.domain.model.Task
 import com.scrap2stack.app.domain.model.TaskPriority
 import com.scrap2stack.app.feature.chat.components.CodeBlockBubble
+import com.scrap2stack.app.ui.theme.AmberGold
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
-import com.scrap2stack.app.ui.theme.PrimaryIndigoDark
 import com.scrap2stack.app.ui.theme.PrimaryIndigoLight
-import com.scrap2stack.app.ui.theme.RevivalEmerald
 import com.scrap2stack.app.ui.theme.StatusAbandoned
+import com.scrap2stack.app.ui.theme.brutalColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -50,6 +53,7 @@ fun TasksScreen(
     onCreateTask: (String, String, TaskPriority) -> Unit,
     onStatusUpdate: (String, String) -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     var selectedStatus by remember { mutableStateOf("TODO") }
     val statuses = listOf(
         "TODO" to "To Do",
@@ -59,7 +63,12 @@ fun TasksScreen(
     )
     var showCreateDialog by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(brutal.canvas)
+            .dotGridBackground()
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -75,12 +84,14 @@ fun TasksScreen(
             ) {
                 Column {
                     Text(
-                        text = "Interactive Kanban",
+                        text = "KANBAN BOARD //",
                         style = MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp,
                             fontSize = 11.sp
                         ),
-                        color = ElectricMint
+                        color = brutal.accentOnSurface
                     )
                     Text(
                         text = "Workspace Tasks",
@@ -88,38 +99,40 @@ fun TasksScreen(
                             fontWeight = FontWeight.Black,
                             fontSize = 22.sp
                         ),
-                        color = Color.White
+                        color = brutal.textPrimary
                     )
                 }
 
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(
-                            Brush.horizontalGradient(listOf(PrimaryIndigo, PrimaryIndigoDark))
+                        .tactileBrutalCard(
+                            cornerRadius = 10.dp,
+                            containerColor = ElectricMint,
+                            borderColor = BrutalShadowBlack,
+                            borderWidth = 2.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 3.dp,
+                            shadowOffsetY = 3.dp,
+                            onClick = { showCreateDialog = true }
                         )
-                        .border(
-                            BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
-                            RoundedCornerShape(14.dp)
-                        )
-                        .bouncingClickable(scaleDown = 0.92f) { showCreateDialog = true }
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "New Task",
-                            tint = Color.White,
+                            tint = BrutalInkBlack,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "New Task",
+                            text = "NEW TASK",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 11.sp
                             ),
-                            color = Color.White
+                            color = BrutalInkBlack
                         )
                     }
                 }
@@ -137,52 +150,44 @@ fun TasksScreen(
                     val isSelected = selectedStatus == statusKey
                     val count = tasks.count { it.status.name == statusKey }
 
-                    val pillBg by animateColorAsState(
-                        targetValue = if (isSelected) ElectricMint.copy(alpha = 0.15f) else Color(0xFF10192A),
-                        label = "pill_bg"
-                    )
-                    val pillBorder by animateColorAsState(
-                        targetValue = if (isSelected) ElectricMint.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.08f),
-                        label = "pill_border"
-                    )
-
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = pillBg,
-                        border = BorderStroke(1.dp, pillBorder),
-                        modifier = Modifier.bouncingClickable(scaleDown = 0.94f) {
-                            selectedStatus = statusKey
-                        }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = statusLabel,
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 13.sp
-                                ),
-                                color = if (isSelected) ElectricMint else Color.White.copy(alpha = 0.7f)
+                    Box(
+                        modifier = Modifier
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = if (isSelected) ElectricMint else brutal.surfaceRaised,
+                                borderColor = if (isSelected) BrutalShadowBlack else brutal.border,
+                                borderWidth = 1.5.dp,
+                                shadowColor = if (isSelected) PrimaryIndigo else brutal.shadow,
+                                shadowOffsetX = 3.dp,
+                                shadowOffsetY = 3.dp,
+                                onClick = { selectedStatus = statusKey }
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            // Task Count Badge
+                            .padding(horizontal = 12.dp, vertical = 7.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = statusLabel.uppercase(),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 11.sp
+                                ),
+                                color = if (isSelected) BrutalInkBlack else brutal.textPrimary
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
                             Box(
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .background(
-                                        if (isSelected) ElectricMint else Color.White.copy(alpha = 0.1f)
-                                    )
+                                    .background(if (isSelected) BrutalInkBlack else ElectricMint)
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
                                     text = "$count",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 10.sp
                                     ),
-                                    color = if (isSelected) Color(0xFF080B11) else Color.White
+                                    color = if (isSelected) ElectricMint else BrutalInkBlack
                                 )
                             }
                         }
@@ -246,32 +251,34 @@ fun KanbanTaskCard(
 ) {
     var showAiSolution by remember { mutableStateOf(false) }
     var aiSolutionText by remember { mutableStateOf<String?>(null) }
+    var aiIsLiveData by remember { mutableStateOf(true) }
+    var aiStatusNote by remember { mutableStateOf<String?>(null) }
     var isLoadingAi by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val geminiService = remember { GeminiAiService() }
 
+    val brutal = MaterialTheme.brutalColors
     val priorityColor = when (task.priority.name) {
         "LOW" -> Color(0xFF64748B)
         "MEDIUM" -> PrimaryIndigoLight
-        "HIGH" -> Color(0xFFF59E0B)
+        "HIGH" -> AmberGold
         "URGENT" -> StatusAbandoned
         else -> Color.Gray
     }
 
-    val cardBorder = Brush.linearGradient(
-        listOf(
-            priorityColor.copy(alpha = 0.4f),
-            Color.White.copy(alpha = 0.05f)
-        )
-    )
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .background(Color(0xFF10192A))
-            .border(BorderStroke(1.dp, cardBorder), RoundedCornerShape(22.dp))
-            .padding(18.dp)
+            .brutalCard(
+                cornerRadius = 16.dp,
+                containerColor = brutal.surface,
+                borderColor = brutal.border,
+                borderWidth = 2.dp,
+                shadowColor = priorityColor,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
+            .padding(16.dp)
     ) {
         Column {
             // Task Header: Title & Priority Pill
@@ -283,10 +290,10 @@ fun KanbanTaskCard(
                 Text(
                     text = task.title,
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         fontSize = 16.sp
                     ),
-                    color = Color.White,
+                    color = brutal.textPrimary,
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -301,19 +308,19 @@ fun KanbanTaskCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Assignee Info
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
                             .size(24.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.08f)),
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(brutal.surfaceRaised)
+                            .border(1.dp, brutal.border, RoundedCornerShape(6.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.6f),
+                            tint = brutal.textPrimary,
                             modifier = Modifier.size(14.dp)
                         )
                     }
@@ -322,53 +329,55 @@ fun KanbanTaskCard(
                         text = task.assignee?.ifBlank { "Unassigned" } ?: "Unassigned",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.SemiBold
                         ),
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = brutal.textMuted
                     )
                 }
 
-                // Skill Tag
                 if (task.skill.isNotBlank()) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = PrimaryIndigo.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, PrimaryIndigo.copy(alpha = 0.3f))
-                    ) {
-                        Text(
-                            text = "#${task.skill}",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = PrimaryIndigoLight,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
-                    }
+                    SkillChip(skill = "#${task.skill}")
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Gemini AI Code Suggestion Action
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(PrimaryIndigo.copy(alpha = 0.10f))
-                    .border(BorderStroke(1.dp, PrimaryIndigo.copy(alpha = 0.25f)), RoundedCornerShape(12.dp))
-                    .bouncingClickable(scaleDown = 0.96f) {
-                        showAiSolution = !showAiSolution
-                        if (showAiSolution && aiSolutionText == null) {
-                            isLoadingAi = true
-                            coroutineScope.launch {
-                                val res = geminiService.generateTaskSolution(
-                                    taskTitle = task.title,
-                                    skill = task.skill.ifBlank { "Kotlin" },
-                                    projectName = projectId
-                                )
-                                aiSolutionText = res.getOrDefault("// ScrapAI Solution:\nfun solve() { /* implementation */ }")
-                                isLoadingAi = false
+                    .tactileBrutalCard(
+                        cornerRadius = 10.dp,
+                        containerColor = brutal.surfaceRaised,
+                        borderColor = PrimaryIndigo,
+                        borderWidth = 1.5.dp,
+                        shadowColor = brutal.shadow,
+                        shadowOffsetX = 2.dp,
+                        shadowOffsetY = 2.dp,
+                        onClick = {
+                            showAiSolution = !showAiSolution
+                            if (showAiSolution && aiSolutionText == null) {
+                                isLoadingAi = true
+                                coroutineScope.launch {
+                                    val res = geminiService.generateTaskSolution(
+                                        taskTitle = task.title,
+                                        skill = task.skill.ifBlank { "Kotlin" },
+                                        projectName = projectId
+                                    )
+                                    res.onSuccess { live ->
+                                        aiSolutionText = live.data
+                                        aiIsLiveData = live.isLiveData
+                                        aiStatusNote = live.statusNote
+                                    }.onFailure {
+                                        aiSolutionText = "// ScrapAI Solution:\nfun solve() { /* implementation */ }"
+                                        aiIsLiveData = false
+                                        aiStatusNote = "Offline heuristic"
+                                    }
+                                    isLoadingAi = false
+                                }
                             }
                         }
-                    }
+                    )
                     .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Row(
@@ -379,22 +388,23 @@ fun KanbanTaskCard(
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = ElectricMint
+                        modifier = Modifier.size(15.dp),
+                        tint = brutal.accentOnSurface
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (showAiSolution) "Hide AI Code Solution" else "Ask Gemini AI For Solution",
+                        text = if (showAiSolution) "HIDE AI SOLUTION" else "ASK GEMINI AI FOR SOLUTION",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 11.sp
                         ),
-                        color = ElectricMint
+                        color = brutal.accentOnSurface
                     )
                 }
             }
 
-            // AI Code Suggestion Box (uses CodeBlockBubble for syntax highlighting!)
+            // AI Code Suggestion Box
             AnimatedVisibility(visible = showAiSolution) {
                 Column(
                     modifier = Modifier
@@ -409,16 +419,37 @@ fun KanbanTaskCard(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
-                                color = ElectricMint
+                                color = brutal.accentOnSurface
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 "Gemini is writing code solution...",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = Color.White.copy(alpha = 0.7f)
+                                color = brutal.textMuted
                             )
                         }
                     } else {
+                        if (!aiIsLiveData) {
+                            Row(
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                BrutalBadge(
+                                    text = "OFFLINE HEURISTIC",
+                                    containerColor = AmberGold,
+                                    contentColor = BrutalInkBlack,
+                                    borderColor = brutal.border
+                                )
+                                if (!aiStatusNote.isNullOrBlank()) {
+                                    Text(
+                                        text = aiStatusNote ?: "",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = brutal.textMuted
+                                    )
+                                }
+                            }
+                        }
                         CodeBlockBubble(
                             language = "KOTLIN",
                             code = aiSolutionText ?: ""
@@ -433,74 +464,63 @@ fun KanbanTaskCard(
             when (task.status.name) {
                 "TODO" -> {
                     Scrap2StackButton(
-                        text = "Start Task ➔",
+                        text = "START TASK →",
                         onClick = { onStatusUpdate(task.id, "IN_PROGRESS") },
-                        modifier = Modifier.height(44.dp)
+                        modifier = Modifier.height(46.dp)
                     )
                 }
                 "IN_PROGRESS" -> {
                     Scrap2StackOutlinedButton(
-                        text = "Submit for Review ➔",
+                        text = "SUBMIT FOR REVIEW →",
                         onClick = { onStatusUpdate(task.id, "REVIEW") },
-                        modifier = Modifier.height(44.dp)
+                        modifier = Modifier.height(46.dp)
                     )
                 }
                 "REVIEW" -> {
+                    Scrap2StackButton(
+                        text = "APPROVE & COMPLETE (+10 CHARMS)",
+                        onClick = { onStatusUpdate(task.id, "COMPLETED") },
+                        containerColor = ElectricMint,
+                        contentColor = BrutalInkBlack,
+                        modifier = Modifier.height(48.dp)
+                    )
+                }
+                "COMPLETED" -> {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(46.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(
-                                Brush.horizontalGradient(listOf(ElectricMint, RevivalEmerald))
+                            .brutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = ElectricMint,
+                                borderColor = BrutalShadowBlack,
+                                borderWidth = 1.5.dp,
+                                shadowColor = BrutalShadowBlack,
+                                shadowOffsetX = 2.dp,
+                                shadowOffsetY = 2.dp
                             )
-                            .bouncingClickable(scaleDown = 0.96f) {
-                                onStatusUpdate(task.id, "COMPLETED")
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Stars,
-                                contentDescription = null,
-                                tint = Color(0xFF080B11),
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Approve & Complete (+10 Charms)",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 13.sp
-                                ),
-                                color = Color(0xFF080B11)
-                            )
-                        }
-                    }
-                }
-                "COMPLETED" -> {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        color = ElectricMint.copy(alpha = 0.10f),
-                        border = BorderStroke(1.dp, ElectricMint.copy(alpha = 0.3f))
                     ) {
                         Row(
-                            modifier = Modifier.padding(vertical = 8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = ElectricMint,
+                                tint = BrutalInkBlack,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Completed (+10 Charms Earned)",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = ElectricMint
+                                text = "COMPLETED (+10 CHARMS EARNED)",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 11.sp
+                                ),
+                                color = BrutalInkBlack
                             )
                         }
                     }
@@ -515,38 +535,68 @@ fun EnhancedCreateTaskDialog(
     onDismiss: () -> Unit,
     onCreate: (String, String, TaskPriority) -> Unit
 ) {
+    val brutal = MaterialTheme.brutalColors
     var title by remember { mutableStateOf("") }
     var skill by remember { mutableStateOf("") }
     var selectedPriority by remember { mutableStateOf(TaskPriority.MEDIUM) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = Color(0xFF0F172A),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
+                .padding(8.dp)
+                .brutalCard(
+                    cornerRadius = 18.dp,
+                    containerColor = brutal.surface,
+                    borderColor = brutal.border,
+                    borderWidth = 2.dp,
+                    shadowColor = BrutalShadowBlack,
+                    shadowOffsetX = 5.dp,
+                    shadowOffsetY = 5.dp
+                )
         ) {
             Column(
-                modifier = Modifier.padding(22.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "New Workspace Task",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        ),
-                        color = Color.White
-                    )
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White.copy(alpha = 0.6f))
+                    Column {
+                        BrutalHeaderTag(text = "KANBAN // NEW")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "New Workspace Task",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Black,
+                                fontSize = 18.sp
+                            ),
+                            color = brutal.textPrimary
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = brutal.surfaceRaised,
+                                borderColor = brutal.border,
+                                borderWidth = 1.5.dp,
+                                shadowColor = brutal.shadow,
+                                shadowOffsetX = 2.dp,
+                                shadowOffsetY = 2.dp,
+                                onClick = onDismiss
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = brutal.textPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
 
@@ -556,10 +606,16 @@ fun EnhancedCreateTaskDialog(
                     label = { Text("Task Title (e.g. Implement Compose UI)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ElectricMint,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        focusedBorderColor = brutal.border,
+                        unfocusedBorderColor = brutal.border.copy(alpha = 0.45f),
+                        focusedContainerColor = brutal.surfaceRaised,
+                        unfocusedContainerColor = brutal.surfaceRaised,
+                        focusedTextColor = brutal.textPrimary,
+                        unfocusedTextColor = brutal.textPrimary,
+                        focusedLabelColor = brutal.accentOnSurface,
+                        unfocusedLabelColor = brutal.textMuted
                     )
                 )
 
@@ -569,48 +625,66 @@ fun EnhancedCreateTaskDialog(
                     label = { Text("Required Skill (e.g. Kotlin, Docker)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ElectricMint,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.12f)
+                        focusedBorderColor = brutal.border,
+                        unfocusedBorderColor = brutal.border.copy(alpha = 0.45f),
+                        focusedContainerColor = brutal.surfaceRaised,
+                        unfocusedContainerColor = brutal.surfaceRaised,
+                        focusedTextColor = brutal.textPrimary,
+                        unfocusedTextColor = brutal.textPrimary,
+                        focusedLabelColor = brutal.accentOnSurface,
+                        unfocusedLabelColor = brutal.textMuted
                     )
                 )
 
                 Text(
-                    text = "Priority Level",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.White.copy(alpha = 0.8f)
+                    text = "PRIORITY LEVEL",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.6.sp
+                    ),
+                    color = brutal.textMuted
                 )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     TaskPriority.entries.forEach { p ->
                         val isSelected = selectedPriority == p
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (isSelected) ElectricMint.copy(alpha = 0.15f) else Color(0xFF131D31),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isSelected) ElectricMint.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.08f)
-                            ),
+                        Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .bouncingClickable(scaleDown = 0.94f) { selectedPriority = p }
+                                .tactileBrutalCard(
+                                    cornerRadius = 10.dp,
+                                    containerColor = if (isSelected) ElectricMint else brutal.surfaceRaised,
+                                    borderColor = brutal.border,
+                                    borderWidth = if (isSelected) 2.dp else 1.5.dp,
+                                    shadowColor = brutal.shadow,
+                                    shadowOffsetX = if (isSelected) 3.dp else 2.dp,
+                                    shadowOffsetY = if (isSelected) 3.dp else 2.dp,
+                                    onClick = { selectedPriority = p }
+                                )
+                                .padding(vertical = 9.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = p.name,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = if (isSelected) ElectricMint else Color.White.copy(alpha = 0.6f)
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 10.sp
+                                ),
+                                color = if (isSelected) BrutalInkBlack else brutal.textMuted,
+                                maxLines = 1
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 Scrap2StackButton(
                     text = "Create Task",
