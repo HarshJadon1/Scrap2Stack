@@ -1,17 +1,14 @@
 package com.scrap2stack.app.feature.profile
 
 import android.util.Log
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -21,23 +18,35 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scrap2stack.app.core.ui.components.Avatar
+import com.scrap2stack.app.core.ui.components.ErrorView
 import com.scrap2stack.app.core.ui.components.LoadingView
-import com.scrap2stack.app.core.ui.components.Scrap2StackOutlinedButton
+import com.scrap2stack.app.core.ui.components.Scrap2StackButton
+import com.scrap2stack.app.core.ui.components.SectionHeader
 import com.scrap2stack.app.core.ui.components.SkillChip
-import com.scrap2stack.app.core.ui.components.bouncingClickable
+import com.scrap2stack.app.core.ui.components.brutalCard
+import com.scrap2stack.app.core.ui.components.dotGridBackground
+import com.scrap2stack.app.core.ui.components.tactileBrutalCard
 import com.scrap2stack.app.domain.model.Developer
+import com.scrap2stack.app.ui.theme.AmberGold
+import com.scrap2stack.app.ui.theme.BrutalBorderWhite
+import com.scrap2stack.app.ui.theme.BrutalCanvasDark
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
+import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
+import com.scrap2stack.app.ui.theme.NeonCyan
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
-import com.scrap2stack.app.ui.theme.PrimaryIndigoLight
-import com.scrap2stack.app.ui.theme.RevivalEmerald
 
 @Composable
 fun ProfileScreen(
@@ -51,30 +60,24 @@ fun ProfileScreen(
         viewModel.loadProfile()
     }
 
-    Scaffold { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+    Scaffold(
+        containerColor = BrutalCanvasDark
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .dotGridBackground()
+                .padding(innerPadding)
+        ) {
             when (val state = uiState) {
                 is ProfileUiState.Loading -> {
                     LoadingView(modifier = Modifier.padding(20.dp))
                 }
                 is ProfileUiState.Error -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = state.message,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.loadProfile() }) {
-                            Text("Retry")
-                        }
-                    }
+                    ErrorView(
+                        message = state.message,
+                        onRetry = { viewModel.loadProfile() }
+                    )
                 }
                 is ProfileUiState.Success -> {
                     ProfileContent(
@@ -100,27 +103,22 @@ private fun ProfileContent(
             .padding(horizontal = 20.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Spacer(modifier = Modifier.height(18.dp))
-        
-        // Hero Profile Glass Card
-        val cardBorder = Brush.linearGradient(
-            listOf(
-                Color.White.copy(alpha = 0.16f),
-                ElectricMint.copy(alpha = 0.2f),
-                Color.Transparent
-            )
-        )
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Neo-Brutalist Hero Profile Card
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(26.dp))
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFF131D33), Color(0xFF0F172A))
-                    )
+                .brutalCard(
+                    cornerRadius = 18.dp,
+                    containerColor = BrutalSurfaceDark,
+                    borderColor = BrutalBorderWhite,
+                    borderWidth = 2.dp,
+                    shadowColor = ElectricMint,
+                    shadowOffsetX = 5.dp,
+                    shadowOffsetY = 5.dp
                 )
-                .border(BorderStroke(1.dp, cardBorder), RoundedCornerShape(26.dp))
-                .padding(22.dp)
+                .padding(20.dp)
         ) {
             Column {
                 Row(
@@ -129,46 +127,90 @@ private fun ProfileContent(
                 ) {
                     Avatar(
                         name = developer.name.ifBlank { "User" },
-                        modifier = Modifier.size(76.dp)
+                        modifier = Modifier.size(68.dp)
                     )
-                    
-                    Spacer(modifier = Modifier.width(16.dp))
-                    
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = developer.name.ifBlank { "Developer" },
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Black,
-                                fontSize = 22.sp,
-                                letterSpacing = (-0.3).sp
-                            ),
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = developer.name.ifBlank { "Developer" },
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 21.sp,
+                                    letterSpacing = (-0.3).sp
+                                ),
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            // Angled Sticker Rank Badge
+                            val rankBadge = when {
+                                developer.charms >= 200 -> "MASTER"
+                                developer.experienceLevel.name.equals("ADVANCED", ignoreCase = true) -> "PRO"
+                                else -> "DEV"
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .graphicsLayer { rotationZ = -3f }
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(AmberGold)
+                                    .border(1.5.dp, BrutalShadowBlack, RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = rankBadge,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 10.sp
+                                    ),
+                                    color = BrutalInkBlack
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = if (developer.username.isNotBlank()) "@${developer.username}" else "@developer",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                            color = ElectricMint.copy(alpha = 0.85f)
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            ),
+                            color = ElectricMint
                         )
                     }
-                    
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     Box(
                         modifier = Modifier
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.05f))
-                            .bouncingClickable(scaleDown = 0.92f, onClick = onNavigateToSettings)
-                            .padding(10.dp)
+                            .size(42.dp)
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = Color.White,
+                                borderColor = BrutalShadowBlack,
+                                borderWidth = 2.dp,
+                                shadowColor = ElectricMint,
+                                shadowOffsetX = 3.dp,
+                                shadowOffsetY = 3.dp,
+                                onClick = onNavigateToSettings
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Settings",
-                            tint = Color.White.copy(alpha = 0.8f),
+                            tint = BrutalInkBlack,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
                     text = if (developer.bio.isNotBlank()) developer.bio else "Passionate developer revamping open source side projects.",
@@ -176,56 +218,56 @@ private fun ProfileContent(
                         lineHeight = 20.sp,
                         fontSize = 14.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+                    color = Color.White.copy(alpha = 0.85f)
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                Scrap2StackOutlinedButton(
-                    text = "Edit Profile",
+                Scrap2StackButton(
+                    text = "EDIT PROFILE →",
                     onClick = onNavigateToEditProfile
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
-        // Stats Row (Charms & Experience)
+        // Tactile Stat Blocks (Charms & Rank)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ProfileStatCard(
-                label = "Total Charms",
-                value = developer.charms.toString(),
-                accentColor = ElectricMint,
+                label = "CHARMS",
+                value = "${developer.charms} ★",
+                containerColor = BrutalSurfaceDark,
+                borderColor = BrutalBorderWhite,
+                shadowColor = PrimaryIndigo,
+                labelColor = Color.White.copy(alpha = 0.65f),
+                valueColor = ElectricMint,
                 modifier = Modifier.weight(1f)
             )
             ProfileStatCard(
-                label = "Experience Level",
-                value = developer.experienceLevel.name.lowercase().replaceFirstChar { it.uppercase() },
-                accentColor = PrimaryIndigoLight,
+                label = "RANK",
+                value = developer.experienceLevel.name,
+                containerColor = PrimaryIndigo,
+                borderColor = BrutalShadowBlack,
+                shadowColor = ElectricMint,
+                labelColor = Color.White.copy(alpha = 0.85f),
+                valueColor = Color.White,
                 modifier = Modifier.weight(1f)
             )
         }
 
         // Skills Section
         if (developer.skills.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(26.dp))
-            Text(
-                text = "Core Skills",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp
-                ),
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+            SectionHeader(title = "Core Skills")
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 developer.skills.forEach { skill ->
                     SkillChip(skill = skill)
@@ -235,16 +277,8 @@ private fun ProfileContent(
 
         // Interests Section
         if (developer.interests.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(22.dp))
-            Text(
-                text = "Interests",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp
-                ),
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            SectionHeader(title = "Interests")
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -252,19 +286,26 @@ private fun ProfileContent(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 developer.interests.forEach { interest ->
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF131D31),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+                    Box(
+                        modifier = Modifier.brutalCard(
+                            cornerRadius = 10.dp,
+                            containerColor = BrutalSurfaceRaised,
+                            borderColor = BrutalBorderWhite.copy(alpha = 0.8f),
+                            borderWidth = 1.5.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 2.dp,
+                            shadowOffsetY = 2.dp
+                        )
                     ) {
                         Text(
                             text = interest,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Medium,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
                             ),
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = Color.White
                         )
                     }
                 }
@@ -272,31 +313,40 @@ private fun ProfileContent(
         }
 
         // Social Links Section
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "Social & Links",
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 17.sp
-            ),
-            color = Color.White
-        )
-        
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+        SectionHeader(title = "Social & Links")
 
         if (developer.githubUrl.isNotBlank()) {
-            SocialLinkItem(icon = Icons.Default.Code, label = "GitHub", value = developer.githubUrl)
+            SocialLinkItem(
+                icon = Icons.Default.Code,
+                label = "GitHub",
+                value = developer.githubUrl,
+                accentColor = NeonCyan,
+                actionFill = Color.White
+            )
         }
         if (developer.linkedinUrl.isNotBlank()) {
-            SocialLinkItem(icon = Icons.Default.Link, label = "LinkedIn", value = developer.linkedinUrl)
+            SocialLinkItem(
+                icon = Icons.Default.Link,
+                label = "LinkedIn",
+                value = developer.linkedinUrl,
+                accentColor = AmberGold,
+                actionFill = AmberGold
+            )
         }
         if (developer.portfolioUrl.isNotBlank()) {
-            SocialLinkItem(icon = Icons.Default.Public, label = "Portfolio", value = developer.portfolioUrl)
+            SocialLinkItem(
+                icon = Icons.Default.Public,
+                label = "Portfolio",
+                value = developer.portfolioUrl,
+                accentColor = ElectricMint,
+                actionFill = ElectricMint
+            )
         }
-        
+
         if (developer.githubUrl.isBlank() && developer.linkedinUrl.isBlank() && developer.portfolioUrl.isBlank()) {
             Text(
-                text = "No links added yet. Tap 'Edit Profile' to add links.",
+                text = "No links added yet. Tap 'EDIT PROFILE →' to add links.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )
@@ -310,42 +360,63 @@ private fun ProfileContent(
 fun ProfileStatCard(
     label: String,
     value: String,
-    accentColor: Color,
+    containerColor: Color = BrutalSurfaceDark,
+    borderColor: Color = BrutalBorderWhite,
+    shadowColor: Color = PrimaryIndigo,
+    labelColor: Color = Color.White.copy(alpha = 0.65f),
+    valueColor: Color = ElectricMint,
     modifier: Modifier = Modifier
 ) {
-    val statBorder = Brush.linearGradient(
-        listOf(accentColor.copy(alpha = 0.35f), Color.Transparent)
-    )
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF10192A))
-            .border(BorderStroke(1.dp, statBorder), RoundedCornerShape(20.dp))
-            .padding(18.dp),
-        contentAlignment = Alignment.Center
+            .brutalCard(
+                cornerRadius = 14.dp,
+                containerColor = containerColor,
+                borderColor = borderColor,
+                borderWidth = 2.dp,
+                shadowColor = shadowColor,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
+            .padding(horizontal = 14.dp, vertical = 16.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column {
+            Text(
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.8.sp
+                ),
+                color = labelColor
+            )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Black,
-                    fontSize = 24.sp
+                    fontSize = 20.sp
                 ),
-                color = accentColor
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                color = valueColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
 }
 
 @Composable
-fun SocialLinkItem(icon: ImageVector, label: String, value: String) {
+fun SocialLinkItem(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    accentColor: Color = ElectricMint,
+    actionFill: Color = Color.White
+) {
     val uriHandler = LocalUriHandler.current
+    val displayHandle = formatSocialDisplay(label = label, rawUrl = value)
 
     val openUrl = {
         if (value.isNotBlank()) {
@@ -365,12 +436,18 @@ fun SocialLinkItem(icon: ImageVector, label: String, value: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFF10192A))
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.07f)), RoundedCornerShape(16.dp))
-            .bouncingClickable(scaleDown = 0.98f, onClick = openUrl)
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .padding(vertical = 5.dp)
+            .tactileBrutalCard(
+                cornerRadius = 14.dp,
+                containerColor = BrutalSurfaceDark,
+                borderColor = BrutalBorderWhite,
+                borderWidth = 2.dp,
+                shadowColor = accentColor,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp,
+                onClick = openUrl
+            )
+            .padding(horizontal = 14.dp, vertical = 12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -379,39 +456,93 @@ fun SocialLinkItem(icon: ImageVector, label: String, value: String) {
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.05f)),
+                    .brutalCard(
+                        cornerRadius = 10.dp,
+                        containerColor = accentColor,
+                        borderColor = BrutalShadowBlack,
+                        borderWidth = 1.5.dp,
+                        shadowColor = BrutalShadowBlack,
+                        shadowOffsetX = 2.dp,
+                        shadowOffsetY = 2.dp
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = ElectricMint
+                    tint = BrutalInkBlack
                 )
             }
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    text = label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 10.sp,
+                        letterSpacing = 0.6.sp
+                    ),
+                    color = accentColor
                 )
                 Text(
-                    text = value,
+                    text = displayHandle,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
                     ),
-                    color = Color.White
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "Open Link",
-                tint = Color.White.copy(alpha = 0.4f),
-                modifier = Modifier.size(18.dp)
-            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(actionFill)
+                    .border(1.5.dp, BrutalShadowBlack, RoundedCornerShape(6.dp))
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    text = "OPEN",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 10.sp
+                    ),
+                    color = BrutalInkBlack
+                )
+            }
         }
+    }
+}
+
+/**
+ * Strips protocol, tracking query parameters (such as UTM tags), and platform path prefixes
+ * so social cards show a clean handle while keeping the original URL for click navigation.
+ */
+internal fun formatSocialDisplay(label: String, rawUrl: String): String {
+    val trimmed = rawUrl.trim()
+    if (trimmed.isBlank()) return ""
+
+    val withoutQuery = trimmed.substringBefore('?').substringBefore('#')
+    val withoutScheme = withoutQuery
+        .removePrefix("https://")
+        .removePrefix("http://")
+        .removePrefix("www.")
+        .trimEnd('/')
+
+    return when {
+        label.equals("GitHub", ignoreCase = true) || withoutScheme.startsWith("github.com/", ignoreCase = true) -> {
+            withoutScheme.substringAfter("github.com/").ifBlank { withoutScheme }
+        }
+        label.equals("LinkedIn", ignoreCase = true) || withoutScheme.contains("linkedin.com/in/", ignoreCase = true) -> {
+            withoutScheme.substringAfter("linkedin.com/in/").ifBlank {
+                withoutScheme.substringAfter("linkedin.com/").ifBlank { withoutScheme }
+            }
+        }
+        else -> withoutScheme
     }
 }

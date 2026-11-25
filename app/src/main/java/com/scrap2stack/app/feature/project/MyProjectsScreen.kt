@@ -1,18 +1,34 @@
 package com.scrap2stack.app.feature.project
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.scrap2stack.app.core.ui.components.EmptyStateView
 import com.scrap2stack.app.core.ui.components.ErrorView
 import com.scrap2stack.app.core.ui.components.LoadingView
 import com.scrap2stack.app.core.ui.components.ProjectCard
 import com.scrap2stack.app.core.ui.components.SectionHeader
+import com.scrap2stack.app.core.ui.components.dotGridBackground
+import com.scrap2stack.app.core.ui.components.tactileBrutalCard
+import com.scrap2stack.app.ui.theme.BrutalBorderWhite
+import com.scrap2stack.app.ui.theme.BrutalCanvasDark
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
+import com.scrap2stack.app.ui.theme.ElectricMint
+import com.scrap2stack.app.ui.theme.PrimaryIndigo
 
 @Composable
 fun MyProjectsScreen(
@@ -30,26 +46,50 @@ fun MyProjectsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp)
+            .background(BrutalCanvasDark)
+            .dotGridBackground()
+            .padding(horizontal = 20.dp)
     ) {
+        Spacer(modifier = Modifier.height(6.dp))
         SectionHeader(title = "My Projects")
 
-        ScrollableTabRow(
-            selectedTabIndex = selectedTab,
-            containerColor = Color.Transparent,
-            divider = {},
-            edgePadding = 0.dp
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = { Text(title) }
-                )
+                val isSelected = selectedTab == index
+                Box(
+                    modifier = Modifier
+                        .tactileBrutalCard(
+                            cornerRadius = 10.dp,
+                            containerColor = if (isSelected) ElectricMint else BrutalSurfaceRaised,
+                            borderColor = if (isSelected) BrutalShadowBlack else BrutalBorderWhite.copy(alpha = 0.8f),
+                            borderWidth = 1.5.dp,
+                            shadowColor = if (isSelected) PrimaryIndigo else BrutalShadowBlack,
+                            shadowOffsetX = 3.dp,
+                            shadowOffsetY = 3.dp,
+                            onClick = { selectedTab = index }
+                        )
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = title.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 11.sp
+                        ),
+                        color = if (isSelected) BrutalInkBlack else Color.White
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         Box(modifier = Modifier.fillMaxSize()) {
             when (val state = uiState) {
@@ -96,11 +136,8 @@ fun MyProjectsScreen(
 
 @Composable
 fun EmptyProjectsView(message: String = "No projects found in this category.") {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-        )
-    }
+    EmptyStateView(
+        title = "Empty Stack",
+        description = message
+    )
 }

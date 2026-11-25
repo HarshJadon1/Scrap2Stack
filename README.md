@@ -108,3 +108,4 @@ powershell -ExecutionPolicy Bypass -File backend\test_backend.ps1
 
 ## 📄 License & Attribution
 Developed for the **Scrap2Stack Developer Ecosystem**. Built with Kotlin, Jetpack Compose, Supabase, and Gemini AI.
+         

@@ -23,14 +23,18 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.scrap2stack.app.core.ui.components.Scrap2StackButton
 import com.scrap2stack.app.core.ui.components.Scrap2StackCard
 import com.scrap2stack.app.core.ui.components.SectionHeader
-import com.scrap2stack.app.core.ui.components.bouncingClickable
+import com.scrap2stack.app.core.ui.components.brutalCard
+import com.scrap2stack.app.core.ui.components.dotGridBackground
+import com.scrap2stack.app.core.ui.components.tactileBrutalCard
 import com.scrap2stack.app.domain.model.Project
 import com.scrap2stack.app.domain.model.Task
 import com.scrap2stack.app.domain.service.ProjectHealthStatus
@@ -175,7 +179,9 @@ fun WorkspaceDashboard(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp)
+            .background(BrutalCanvasDark)
+            .dotGridBackground()
+            .padding(horizontal = 20.dp)
             .verticalScroll(rememberScrollState())
     ) {
         SectionHeader(title = "Project Overview")
@@ -261,21 +267,27 @@ fun WorkspaceDashboard(
                         }
                     }
 
-                    // Health Status Pill
-                    val (healthBg, healthBorder, healthTextColor) = when (velocityMetrics.healthStatus) {
-                        ProjectHealthStatus.ACCELERATING -> Triple(ElectricMint.copy(alpha = 0.15f), ElectricMint.copy(alpha = 0.4f), ElectricMint)
-                        ProjectHealthStatus.ON_TRACK -> Triple(RevivalEmerald.copy(alpha = 0.15f), RevivalEmerald.copy(alpha = 0.4f), ElectricMint)
-                        ProjectHealthStatus.AT_RISK_BOTTLENECK -> Triple(AmberGold.copy(alpha = 0.15f), AmberGold.copy(alpha = 0.4f), AmberGold)
-                        ProjectHealthStatus.STALLED -> Triple(MaterialTheme.colorScheme.error.copy(alpha = 0.15f), MaterialTheme.colorScheme.error.copy(alpha = 0.4f), MaterialTheme.colorScheme.error)
+                    // Health Status Sticker Pill
+                    val (healthBg, healthTextColor) = when (velocityMetrics.healthStatus) {
+                        ProjectHealthStatus.ACCELERATING -> ElectricMint to BrutalInkBlack
+                        ProjectHealthStatus.ON_TRACK -> RevivalEmerald to BrutalInkBlack
+                        ProjectHealthStatus.AT_RISK_BOTTLENECK -> AmberGold to BrutalInkBlack
+                        ProjectHealthStatus.STALLED -> MaterialTheme.colorScheme.error to Color.White
                     }
 
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = healthBg,
-                        border = BorderStroke(1.dp, healthBorder)
+                    Box(
+                        modifier = Modifier.brutalCard(
+                            cornerRadius = 8.dp,
+                            containerColor = healthBg,
+                            borderColor = BrutalShadowBlack,
+                            borderWidth = 1.5.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 2.dp,
+                            shadowOffsetY = 2.dp
+                        )
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -287,7 +299,11 @@ fun WorkspaceDashboard(
                             )
                             Text(
                                 text = velocityMetrics.healthBadgeLabel,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 10.sp
+                                ),
                                 color = healthTextColor
                             )
                         }
@@ -302,82 +318,115 @@ fun WorkspaceDashboard(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // Story Points Metric
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color(0xFF131D31),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .brutalCard(
+                                cornerRadius = 12.dp,
+                                containerColor = BrutalSurfaceRaised,
+                                borderColor = BrutalBorderWhite.copy(alpha = 0.8f),
+                                borderWidth = 1.5.dp,
+                                shadowColor = BrutalShadowBlack,
+                                shadowOffsetX = 3.dp,
+                                shadowOffsetY = 3.dp
+                            )
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier.padding(11.dp)) {
                             Text(
-                                text = "Burnup Points",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                text = "BURNUP",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = Color.White.copy(alpha = 0.65f)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "${velocityMetrics.completedStoryPoints}/${velocityMetrics.totalStoryPoints}",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
                                 color = Color.White
                             )
                             Text(
                                 text = "${velocityMetrics.progressPercent}% burned",
-                                style = MaterialTheme.typography.labelSmall,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                                 color = ElectricMint
                             )
                         }
                     }
 
                     // Velocity Metric
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color(0xFF131D31),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .brutalCard(
+                                cornerRadius = 12.dp,
+                                containerColor = BrutalSurfaceRaised,
+                                borderColor = BrutalBorderWhite.copy(alpha = 0.8f),
+                                borderWidth = 1.5.dp,
+                                shadowColor = BrutalShadowBlack,
+                                shadowOffsetX = 3.dp,
+                                shadowOffsetY = 3.dp
+                            )
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier.padding(11.dp)) {
                             Text(
-                                text = "Cadence",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                text = "CADENCE",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = Color.White.copy(alpha = 0.65f)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "${velocityMetrics.weeklyVelocityStoryPoints}",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
                                 color = Color.White
                             )
                             Text(
-                                text = "pts / week",
-                                style = MaterialTheme.typography.labelSmall,
+                                text = "pts / wk",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                                 color = AmberGold
                             )
                         }
                     }
 
                     // Ship Date Forecast
-                    Surface(
-                        modifier = Modifier.weight(1.1f),
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color(0xFF131D31),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+                    Box(
+                        modifier = Modifier
+                            .weight(1.1f)
+                            .brutalCard(
+                                cornerRadius = 12.dp,
+                                containerColor = BrutalSurfaceRaised,
+                                borderColor = BrutalBorderWhite.copy(alpha = 0.8f),
+                                borderWidth = 1.5.dp,
+                                shadowColor = BrutalShadowBlack,
+                                shadowOffsetX = 3.dp,
+                                shadowOffsetY = 3.dp
+                            )
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier.padding(11.dp)) {
                             Text(
-                                text = "Est. Ship",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                text = "EST. SHIP",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = Color.White.copy(alpha = 0.65f)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = if (isShipped) "Shipped 🚀" else "~${velocityMetrics.estimatedWeeksToShip} wks",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = if (isShipped) ElectricMint else MaterialTheme.colorScheme.primary
+                                text = if (isShipped) "Shipped 🚀" else "~${velocityMetrics.estimatedWeeksToShip}w",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                color = if (isShipped) ElectricMint else PrimaryIndigoLight
                             )
                             Text(
                                 text = if (isShipped) "Live stack" else "80% CI: ${velocityMetrics.confidenceIntervalWeeks.first}-${velocityMetrics.confidenceIntervalWeeks.second}w",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = Color.White.copy(alpha = 0.6f),
                                 maxLines = 1
                             )
                         }
@@ -437,11 +486,18 @@ fun WorkspaceDashboard(
 
         // Shipped Status Banner OR Shipping CTA Card
         if (isShipped) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = Color(0xFF13221C),
-                border = BorderStroke(1.dp, ElectricMint.copy(alpha = 0.4f))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .brutalCard(
+                        cornerRadius = 16.dp,
+                        containerColor = BrutalSurfaceDark,
+                        borderColor = ElectricMint,
+                        borderWidth = 2.dp,
+                        shadowColor = ElectricMint,
+                        shadowOffsetX = 4.dp,
+                        shadowOffsetY = 4.dp
+                    )
             ) {
                 Row(
                     modifier = Modifier.padding(18.dp),
@@ -449,38 +505,51 @@ fun WorkspaceDashboard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(ElectricMint.copy(alpha = 0.2f)),
+                            .size(46.dp)
+                            .brutalCard(
+                                cornerRadius = 12.dp,
+                                containerColor = ElectricMint,
+                                borderColor = BrutalShadowBlack,
+                                borderWidth = 2.dp,
+                                shadowColor = BrutalShadowBlack,
+                                shadowOffsetX = 2.dp,
+                                shadowOffsetY = 2.dp
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Verified, contentDescription = null, tint = ElectricMint, modifier = Modifier.size(28.dp))
+                        Icon(Icons.Default.Verified, contentDescription = null, tint = BrutalInkBlack, modifier = Modifier.size(26.dp))
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Shipped Stack Showcase Live",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
                             color = ElectricMint
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "This repository has been successfully revived! It is actively showcased in the Community Stacks feed.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.75f)
+                            color = Color.White.copy(alpha = 0.8f)
                         )
                     }
                 }
             }
         } else {
             // Ship Stack Call-to-Action Card
-            Surface(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .bouncingClickable(scaleDown = 0.98f) { showShipConfirmationDialog = true },
-                shape = RoundedCornerShape(20.dp),
-                color = Color(0xFF1E1736),
-                border = BorderStroke(1.dp, Brush.horizontalGradient(listOf(PrimaryIndigo, AmberGold)))
+                    .tactileBrutalCard(
+                        cornerRadius = 16.dp,
+                        containerColor = PrimaryIndigo,
+                        borderColor = BrutalBorderWhite,
+                        borderWidth = 2.dp,
+                        shadowColor = AmberGold,
+                        shadowOffsetX = 5.dp,
+                        shadowOffsetY = 5.dp,
+                        onClick = { showShipConfirmationDialog = true }
+                    )
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Row(
@@ -494,13 +563,13 @@ fun WorkspaceDashboard(
                             Column {
                                 Text(
                                     text = "Ready to Ship this Stack?",
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
                                     color = Color.White
                                 )
                                 Text(
-                                    text = "Publish to Community Showcase & earn +100 Charms",
+                                    text = "Publish to Showcase & earn +100 Charms",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.7f)
+                                    color = Color.White.copy(alpha = 0.85f)
                                 )
                             }
                         }
@@ -508,16 +577,13 @@ fun WorkspaceDashboard(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    Button(
+                    Scrap2StackButton(
+                        text = "SHIP PROJECT (+100 CHARMS)",
                         onClick = { showShipConfirmationDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo, contentColor = Color.White)
-                    ) {
-                        Icon(Icons.Default.RocketLaunch, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Ship Project (+100 Charms)", fontWeight = FontWeight.Bold)
-                    }
+                        containerColor = ElectricMint,
+                        contentColor = BrutalInkBlack,
+                        shadowColor = BrutalShadowBlack
+                    )
                 }
             }
         }
@@ -548,26 +614,25 @@ fun WorkspaceDashboard(
         Spacer(modifier = Modifier.height(24.dp))
 
         // AI Recommendation Banner
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+        Scrap2StackCard(
+            shadowColor = PrimaryIndigo
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = ElectricMint,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "ScrapAI Workspace Tip",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        text = "SCRAPAI WORKSPACE TIP",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black
+                        ),
+                        color = ElectricMint
                     )
                 }
 
@@ -576,19 +641,18 @@ fun WorkspaceDashboard(
                 Text(
                     text = "Moving tasks to 'Completed' in the Kanban board immediately awards +10 Charms to your reputation ledger and advances your project revival score!",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                Button(
+                Scrap2StackButton(
+                    text = "INVITE DEVELOPER MATCHES",
                     onClick = onNavigateToMatches,
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Invite Developer Matches", style = MaterialTheme.typography.labelMedium)
-                }
+                    containerColor = PrimaryIndigo,
+                    contentColor = Color.White,
+                    shadowColor = BrutalShadowBlack
+                )
             }
         }
 

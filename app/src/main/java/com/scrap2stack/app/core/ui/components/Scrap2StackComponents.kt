@@ -21,10 +21,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.scrap2stack.app.ui.theme.BrutalBorderWhite
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
+import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
 import com.scrap2stack.app.ui.theme.PrimaryIndigoDark
@@ -36,35 +42,29 @@ fun Scrap2StackButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    containerColor: Color = ElectricMint,
+    contentColor: Color = BrutalInkBlack,
+    shadowColor: Color = BrutalShadowBlack
 ) {
-    val buttonBrush = if (enabled) {
-        Brush.horizontalGradient(
-            listOf(PrimaryIndigo, PrimaryIndigoDark)
-        )
-    } else {
-        Brush.horizontalGradient(listOf(Color(0xFF334155), Color(0xFF1E293B)))
-    }
+    val activeBg = if (enabled) containerColor else Color(0xFF242B3A)
+    val activeBorder = if (enabled) BrutalShadowBlack else Color(0xFF475569)
+    val activeText = if (enabled) contentColor else Color(0xFF94A3B8)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(54.dp)
-            .bouncingClickable(enabled = enabled, scaleDown = 0.97f, onClick = onClick)
-            .clip(RoundedCornerShape(16.dp))
-            .background(buttonBrush)
-            .border(
-                BorderStroke(
-                    1.dp,
-                    if (enabled) {
-                        Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.35f), Color.Transparent)
-                        )
-                    } else {
-                        Brush.linearGradient(listOf(Color.Transparent, Color.Transparent))
-                    }
-                ),
-                shape = RoundedCornerShape(16.dp)
+            .height(56.dp)
+            .tactileBrutalCard(
+                cornerRadius = 14.dp,
+                containerColor = activeBg,
+                borderColor = activeBorder,
+                borderWidth = 2.dp,
+                shadowColor = shadowColor,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp,
+                enabled = enabled,
+                onClick = onClick
             )
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.Center
@@ -72,11 +72,11 @@ fun Scrap2StackButton(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                letterSpacing = 0.3.sp
+                fontWeight = FontWeight.Black,
+                fontSize = 15.sp,
+                letterSpacing = 0.5.sp
             ),
-            color = if (enabled) Color.White else Color.Gray
+            color = activeText
         )
     }
 }
@@ -86,26 +86,23 @@ fun Scrap2StackOutlinedButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    shadowColor: Color = ElectricMint
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp)
-            .bouncingClickable(enabled = enabled, scaleDown = 0.97f, onClick = onClick)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White.copy(alpha = 0.03f))
-            .border(
-                BorderStroke(
-                    1.dp,
-                    Brush.linearGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                            ElectricMint.copy(alpha = 0.3f)
-                        )
-                    )
-                ),
-                shape = RoundedCornerShape(16.dp)
+            .height(54.dp)
+            .tactileBrutalCard(
+                cornerRadius = 14.dp,
+                containerColor = BrutalSurfaceRaised,
+                borderColor = if (enabled) BrutalBorderWhite else Color(0xFF475569),
+                borderWidth = 2.dp,
+                shadowColor = if (enabled) shadowColor else BrutalShadowBlack,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp,
+                enabled = enabled,
+                onClick = onClick
             )
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.Center
@@ -113,11 +110,11 @@ fun Scrap2StackOutlinedButton(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                letterSpacing = 0.2.sp
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 14.sp,
+                letterSpacing = 0.4.sp
             ),
-            color = if (enabled) MaterialTheme.colorScheme.primary else Color.Gray
+            color = if (enabled) ElectricMint else Color.Gray
         )
     }
 }
@@ -125,40 +122,25 @@ fun Scrap2StackOutlinedButton(
 @Composable
 fun Scrap2StackCard(
     modifier: Modifier = Modifier,
+    containerColor: Color = BrutalSurfaceDark,
+    borderColor: Color = BrutalBorderWhite,
+    shadowColor: Color = BrutalShadowBlack,
     content: @Composable () -> Unit
 ) {
-    val cardBrush = Brush.verticalGradient(
-        listOf(
-            Color(0xFF131D31),
-            Color(0xFF0D1424)
-        )
-    )
-    val borderBrush = Brush.linearGradient(
-        listOf(
-            Color.White.copy(alpha = 0.16f),
-            Color.White.copy(alpha = 0.04f),
-            Color.Transparent
-        )
-    )
-
-    Card(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .border(BorderStroke(1.dp, borderBrush), shape = RoundedCornerShape(22.dp)),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF0F172A),
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .brutalCard(
+                cornerRadius = 16.dp,
+                containerColor = containerColor,
+                borderColor = borderColor,
+                borderWidth = 2.dp,
+                shadowColor = shadowColor,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(cardBrush)
-        ) {
-            content()
-        }
+        content()
     }
 }
 
@@ -167,11 +149,22 @@ fun SkillChip(
     skill: String,
     isVerified: Boolean = false
 ) {
-    Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = if (isVerified) ElectricMint.copy(alpha = 0.12f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-        border = BorderStroke(1.dp, if (isVerified) ElectricMint.copy(alpha = 0.40f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)),
-        modifier = Modifier.padding(end = 6.dp, bottom = 6.dp)
+    val bgColor = if (isVerified) ElectricMint else BrutalSurfaceRaised
+    val borderColor = if (isVerified) BrutalShadowBlack else BrutalBorderWhite.copy(alpha = 0.8f)
+    val textColor = if (isVerified) BrutalInkBlack else Color.White
+
+    Box(
+        modifier = Modifier
+            .padding(end = 6.dp, bottom = 6.dp)
+            .brutalCard(
+                cornerRadius = 10.dp,
+                containerColor = bgColor,
+                borderColor = borderColor,
+                borderWidth = 1.5.dp,
+                shadowColor = if (isVerified) PrimaryIndigo else BrutalShadowBlack,
+                shadowOffsetX = 2.dp,
+                shadowOffsetY = 2.dp
+            )
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -180,17 +173,18 @@ fun SkillChip(
             Text(
                 text = skill,
                 style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 12.sp
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
                 ),
-                color = if (isVerified) ElectricMint else MaterialTheme.colorScheme.primary
+                color = textColor
             )
             if (isVerified) {
                 Spacer(modifier = Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.Default.Verified,
                     contentDescription = "Verified Skill",
-                    tint = ElectricMint,
+                    tint = BrutalInkBlack,
                     modifier = Modifier.size(13.dp)
                 )
             }
@@ -200,14 +194,21 @@ fun SkillChip(
 
 @Composable
 fun StatusChip(status: String, color: Color) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = color.copy(alpha = 0.12f),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.35f)),
-        modifier = Modifier.padding(end = 4.dp)
+    Box(
+        modifier = Modifier
+            .padding(end = 4.dp)
+            .brutalCard(
+                cornerRadius = 10.dp,
+                containerColor = BrutalSurfaceRaised,
+                borderColor = color,
+                borderWidth = 1.5.dp,
+                shadowColor = BrutalShadowBlack,
+                shadowOffsetX = 2.dp,
+                shadowOffsetY = 2.dp
+            )
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -220,9 +221,10 @@ fun StatusChip(status: String, color: Color) {
             Text(
                 text = status,
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                    letterSpacing = 0.3.sp
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.4.sp
                 ),
                 color = color
             )
@@ -232,22 +234,29 @@ fun StatusChip(status: String, color: Color) {
 
 @Composable
 fun ScoreCard(label: String, score: String, modifier: Modifier = Modifier) {
-    val borderBrush = Brush.linearGradient(
-        listOf(ElectricMint.copy(alpha = 0.4f), Color.Transparent)
-    )
-    Surface(
-        modifier = modifier
-            .border(BorderStroke(1.dp, borderBrush), shape = RoundedCornerShape(18.dp)),
-        shape = RoundedCornerShape(18.dp),
-        color = Color(0xFF131D31).copy(alpha = 0.7f)
+    Box(
+        modifier = modifier.brutalCard(
+            cornerRadius = 14.dp,
+            containerColor = BrutalSurfaceDark,
+            borderColor = BrutalBorderWhite,
+            borderWidth = 2.dp,
+            shadowColor = ElectricMint,
+            shadowOffsetX = 4.dp,
+            shadowOffsetY = 4.dp
+        )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 0.6.sp
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(4.dp))
@@ -275,18 +284,22 @@ fun Avatar(name: String, modifier: Modifier = Modifier) {
 
     Box(
         modifier = modifier
-            .size(46.dp)
-            .clip(CircleShape)
-            .background(
-                Brush.linearGradient(listOf(PrimaryIndigo, ElectricMint))
-            )
-            .border(BorderStroke(1.5.dp, Color.White.copy(alpha = 0.25f)), shape = CircleShape),
+            .size(48.dp)
+            .brutalCard(
+                cornerRadius = 14.dp,
+                containerColor = ElectricMint,
+                borderColor = BrutalShadowBlack,
+                borderWidth = 2.dp,
+                shadowColor = BrutalShadowBlack,
+                shadowOffsetX = 3.dp,
+                shadowOffsetY = 3.dp
+            ),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = initials,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = Color.White
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+            color = BrutalInkBlack
         )
     }
 }
@@ -301,18 +314,24 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier) {
     ) {
         Box(
             modifier = Modifier
-                .width(3.dp)
-                .height(18.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(ElectricMint)
+                .size(width = 12.dp, height = 22.dp)
+                .brutalCard(
+                    cornerRadius = 4.dp,
+                    containerColor = ElectricMint,
+                    borderColor = BrutalShadowBlack,
+                    borderWidth = 1.5.dp,
+                    shadowColor = PrimaryIndigo,
+                    shadowOffsetX = 2.dp,
+                    shadowOffsetY = 2.dp
+                )
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Black,
                 fontSize = 20.sp,
-                letterSpacing = (-0.3).sp
+                letterSpacing = (-0.4).sp
             )
         )
     }
@@ -324,7 +343,15 @@ fun ProjectCardSkeleton(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .height(180.dp)
-            .clip(RoundedCornerShape(22.dp))
+            .brutalCard(
+                cornerRadius = 16.dp,
+                containerColor = BrutalSurfaceDark,
+                borderColor = Color(0xFF334155),
+                borderWidth = 2.dp,
+                shadowColor = BrutalShadowBlack,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
             .shimmerEffect()
     )
 }
@@ -355,45 +382,59 @@ fun ErrorView(
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            color = Color(0xFF131D31),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .brutalCard(
+                    cornerRadius = 18.dp,
+                    containerColor = BrutalSurfaceDark,
+                    borderColor = BrutalBorderWhite,
+                    borderWidth = 2.dp,
+                    shadowColor = MaterialTheme.colorScheme.error,
+                    shadowOffsetX = 5.dp,
+                    shadowOffsetY = 5.dp
+                )
         ) {
             Column(
-                modifier = Modifier.padding(28.dp),
+                modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.12f)),
+                        .size(60.dp)
+                        .brutalCard(
+                            cornerRadius = 14.dp,
+                            containerColor = MaterialTheme.colorScheme.error,
+                            borderColor = BrutalShadowBlack,
+                            borderWidth = 2.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 3.dp,
+                            shadowOffsetY = 3.dp
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.ErrorOutline,
                         contentDescription = null,
-                        modifier = Modifier.size(32.dp),
-                        tint = MaterialTheme.colorScheme.error
+                        modifier = Modifier.size(30.dp),
+                        tint = Color.White
                     )
                 }
                 Spacer(modifier = Modifier.height(18.dp))
                 Text(
                     text = "Something went wrong",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
                     textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.height(24.dp))
-                Scrap2StackButton(text = "Try Again", onClick = onRetry)
+                Spacer(modifier = Modifier.height(22.dp))
+                Scrap2StackButton(text = "TRY AGAIN", onClick = onRetry)
             }
         }
     }
@@ -413,34 +454,51 @@ fun EmptyStateView(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .brutalCard(
+                    cornerRadius = 18.dp,
+                    containerColor = BrutalSurfaceDark,
+                    borderColor = BrutalBorderWhite,
+                    borderWidth = 2.dp,
+                    shadowColor = PrimaryIndigo,
+                    shadowOffsetX = 4.dp,
+                    shadowOffsetY = 4.dp
+                )
+                .padding(24.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF131D31))
-                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)), CircleShape),
+                    .size(64.dp)
+                    .brutalCard(
+                        cornerRadius = 14.dp,
+                        containerColor = PrimaryIndigo,
+                        borderColor = BrutalShadowBlack,
+                        borderWidth = 2.dp,
+                        shadowColor = BrutalShadowBlack,
+                        shadowOffsetX = 3.dp,
+                        shadowOffsetY = 3.dp
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.FolderOpen,
                     contentDescription = null,
-                    modifier = Modifier.size(36.dp),
-                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.White
                 )
             }
             Spacer(modifier = Modifier.height(18.dp))
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                 textAlign = TextAlign.Center
             )
         }

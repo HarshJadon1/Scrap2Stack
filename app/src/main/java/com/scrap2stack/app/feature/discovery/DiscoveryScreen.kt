@@ -22,10 +22,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scrap2stack.app.core.ui.components.*
+import com.scrap2stack.app.ui.theme.BrutalBorderWhite
+import com.scrap2stack.app.ui.theme.BrutalCanvasDark
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
+import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
 import com.scrap2stack.app.ui.theme.PrimaryIndigoDark
@@ -54,6 +61,7 @@ fun DiscoveryScreen(
     }
 
     Scaffold(
+        containerColor = BrutalCanvasDark,
         topBar = {
             Column(
                 modifier = Modifier
@@ -67,8 +75,10 @@ fun DiscoveryScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Explore",
+                            text = "EXPLORE //",
                             style = MaterialTheme.typography.labelMedium.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp,
                                 fontSize = 11.sp
                             ),
@@ -85,44 +95,49 @@ fun DiscoveryScreen(
                         )
                     }
 
-                    // Filter action pill button
+                    // Tactile Filter Keycap Button
+                    val filterActive = selectedCategory != "ALL" || selectedStatus != "ALL"
                     Box(
                         modifier = Modifier
-                            .clip(CircleShape)
-                            .background(Color(0xFF131D31))
-                            .border(
-                                BorderStroke(
-                                    1.dp,
-                                    if (selectedCategory != "ALL" || selectedStatus != "ALL") ElectricMint.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.1f)
-                                ),
-                                CircleShape
-                            )
-                            .bouncingClickable(scaleDown = 0.92f) { showFilterSheet = true }
-                            .padding(10.dp)
+                            .size(44.dp)
+                            .tactileBrutalCard(
+                                cornerRadius = 12.dp,
+                                containerColor = if (filterActive) ElectricMint else BrutalSurfaceRaised,
+                                borderColor = if (filterActive) BrutalShadowBlack else BrutalBorderWhite,
+                                borderWidth = 2.dp,
+                                shadowColor = if (filterActive) PrimaryIndigo else BrutalShadowBlack,
+                                shadowOffsetX = 3.dp,
+                                shadowOffsetY = 3.dp,
+                                onClick = { showFilterSheet = true }
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Tune,
                             contentDescription = "Filters",
                             modifier = Modifier.size(20.dp),
-                            tint = if (selectedCategory != "ALL" || selectedStatus != "ALL") ElectricMint else Color.White.copy(alpha = 0.8f)
+                            tint = if (filterActive) BrutalInkBlack else Color.White
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Floating Modern Search Bar
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Neo-Brutalist Search Bar
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(Color(0xFF10192A))
-                        .border(
-                            BorderStroke(1.dp, Color.White.copy(alpha = 0.09f)),
-                            RoundedCornerShape(18.dp)
+                        .height(56.dp)
+                        .brutalCard(
+                            cornerRadius = 14.dp,
+                            containerColor = BrutalSurfaceDark,
+                            borderColor = BrutalBorderWhite,
+                            borderWidth = 2.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 4.dp,
+                            shadowOffsetY = 4.dp
                         )
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 14.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Row(
@@ -135,7 +150,7 @@ fun DiscoveryScreen(
                             tint = ElectricMint,
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         TextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -144,7 +159,7 @@ fun DiscoveryScreen(
                                 Text(
                                     "Search tech, skills, or projects...",
                                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.48f)
                                 )
                             },
                             singleLine = true,
@@ -161,7 +176,7 @@ fun DiscoveryScreen(
                                 Icon(
                                     imageVector = Icons.Default.Clear,
                                     contentDescription = "Clear",
-                                    tint = Color.White.copy(alpha = 0.5f),
+                                    tint = Color.White.copy(alpha = 0.7f),
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -169,9 +184,9 @@ fun DiscoveryScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Quick Filter Category Pills
+                // Quick Filter Category Sticker Pills
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -181,27 +196,28 @@ fun DiscoveryScreen(
                     val categories = listOf("ALL", "🚀 Shipped", "Web", "Mobile", "AI/ML", "Open Source", "DevOps")
                     categories.forEach { category ->
                         val isSelected = selectedCategory == category
-                        val pillBg = if (isSelected) ElectricMint.copy(alpha = 0.15f) else Color(0xFF131D31)
-                        val pillBorder = if (isSelected) ElectricMint.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.08f)
-                        val pillTextColor = if (isSelected) ElectricMint else Color.White.copy(alpha = 0.7f)
-
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(pillBg)
-                                .border(BorderStroke(1.dp, pillBorder), RoundedCornerShape(20.dp))
-                                .bouncingClickable(scaleDown = 0.94f) {
-                                    selectedCategory = category
-                                }
-                                .padding(horizontal = 14.dp, vertical = 7.dp)
+                                .tactileBrutalCard(
+                                    cornerRadius = 10.dp,
+                                    containerColor = if (isSelected) ElectricMint else BrutalSurfaceRaised,
+                                    borderColor = if (isSelected) BrutalShadowBlack else BrutalBorderWhite.copy(alpha = 0.8f),
+                                    borderWidth = 1.5.dp,
+                                    shadowColor = if (isSelected) PrimaryIndigo else BrutalShadowBlack,
+                                    shadowOffsetX = 3.dp,
+                                    shadowOffsetY = 3.dp,
+                                    onClick = { selectedCategory = category }
+                                )
+                                .padding(horizontal = 13.dp, vertical = 7.dp)
                         ) {
                             Text(
                                 text = category,
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 12.sp
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 11.sp
                                 ),
-                                color = pillTextColor
+                                color = if (isSelected) BrutalInkBlack else Color.White
                             )
                         }
                     }
@@ -209,7 +225,12 @@ fun DiscoveryScreen(
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .dotGridBackground()
+        ) {
             when (val state = uiState) {
                 is DiscoveryUiState.Loading -> {
                     Column(
@@ -288,7 +309,7 @@ fun DiscoveryScreen(
         if (showFilterSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showFilterSheet = false },
-                containerColor = Color(0xFF0F172A),
+                containerColor = BrutalSurfaceDark,
                 scrimColor = Color.Black.copy(alpha = 0.65f)
             ) {
                 Column(

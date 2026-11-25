@@ -21,8 +21,17 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.scrap2stack.app.ui.theme.BrutalBorderWhite
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
 import com.scrap2stack.app.ui.theme.GlassWhiteBorder
 import com.scrap2stack.app.ui.theme.GlassWhiteBorderSubtle
 import com.scrap2stack.app.ui.theme.ShimmerBaseDark
@@ -105,4 +114,127 @@ fun Modifier.shimmerEffect(): Modifier = composed {
                 end = Offset(startOffsetX + size.width.coerceAtLeast(1).toFloat(), size.height.coerceAtLeast(1).toFloat())
             )
         )
+}
+
+/**
+ * Draws a zero-blur solid Neo-Brutalist offset drop shadow behind the element.
+ */
+fun Modifier.brutalShadow(
+    cornerRadius: Dp = 16.dp,
+    shadowColor: Color = BrutalShadowBlack,
+    offsetX: Dp = 4.dp,
+    offsetY: Dp = 4.dp
+): Modifier = this.drawBehind {
+    val radiusPx = cornerRadius.toPx()
+    drawRoundRect(
+        color = shadowColor,
+        topLeft = Offset(offsetX.toPx(), offsetY.toPx()),
+        size = size,
+        cornerRadius = CornerRadius(radiusPx, radiusPx)
+    )
+}
+
+/**
+ * Applies a crisp Neo-Brutalist surface with hard 2dp border and solid offset shadow.
+ */
+fun Modifier.brutalCard(
+    cornerRadius: Dp = 16.dp,
+    containerColor: Color = BrutalSurfaceDark,
+    borderColor: Color = BrutalBorderWhite,
+    borderWidth: Dp = 2.dp,
+    shadowColor: Color = BrutalShadowBlack,
+    shadowOffsetX: Dp = 4.dp,
+    shadowOffsetY: Dp = 4.dp
+): Modifier {
+    val shape = RoundedCornerShape(cornerRadius)
+    return this
+        .padding(end = shadowOffsetX, bottom = shadowOffsetY)
+        .brutalShadow(
+            cornerRadius = cornerRadius,
+            shadowColor = shadowColor,
+            offsetX = shadowOffsetX,
+            offsetY = shadowOffsetY
+        )
+        .clip(shape)
+        .background(containerColor, shape)
+        .border(BorderStroke(borderWidth, borderColor), shape)
+}
+
+/**
+ * Interactive Neo-Brutalist surface that physically depresses toward its solid offset shadow on press.
+ */
+fun Modifier.tactileBrutalCard(
+    cornerRadius: Dp = 16.dp,
+    containerColor: Color = BrutalSurfaceDark,
+    borderColor: Color = BrutalBorderWhite,
+    borderWidth: Dp = 2.dp,
+    shadowColor: Color = BrutalShadowBlack,
+    shadowOffsetX: Dp = 4.dp,
+    shadowOffsetY: Dp = 4.dp,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+): Modifier = composed {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val pressFraction by animateFloatAsState(
+        targetValue = if (isPressed && enabled) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessHigh
+        ),
+        label = "brutal_press"
+    )
+
+    val shape = RoundedCornerShape(cornerRadius)
+    val travelX = (shadowOffsetX - 1.dp).coerceAtLeast(1.dp)
+    val travelY = (shadowOffsetY - 1.dp).coerceAtLeast(1.dp)
+
+    this
+        .padding(end = shadowOffsetX, bottom = shadowOffsetY)
+        .brutalShadow(
+            cornerRadius = cornerRadius,
+            shadowColor = shadowColor,
+            offsetX = shadowOffsetX,
+            offsetY = shadowOffsetY
+        )
+        .clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            enabled = enabled,
+            onClick = onClick
+        )
+        .graphicsLayer {
+            translationX = travelX.toPx() * pressFraction
+            translationY = travelY.toPx() * pressFraction
+        }
+        .clip(shape)
+        .background(containerColor, shape)
+        .border(BorderStroke(borderWidth, borderColor), shape)
+}
+
+/**
+ * Draws a subtle dot-matrix hardware grid across the background canvas.
+ */
+fun Modifier.dotGridBackground(
+    dotColor: Color = Color.White.copy(alpha = 0.055f),
+    spacing: Dp = 18.dp,
+    dotRadius: Dp = 1.dp
+): Modifier = this.drawBehind {
+    val step = spacing.toPx()
+    val radius = dotRadius.toPx()
+    if (step <= 0f) return@drawBehind
+    var x = step * 0.5f
+    while (x < size.width) {
+        var y = step * 0.5f
+        while (y < size.height) {
+            drawCircle(
+                color = dotColor,
+                radius = radius,
+                center = Offset(x, y)
+            )
+            y += step
+        }
+        x += step
+    }
 }

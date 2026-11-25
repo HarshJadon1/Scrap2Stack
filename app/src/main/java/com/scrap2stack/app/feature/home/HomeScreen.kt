@@ -29,12 +29,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scrap2stack.app.core.ui.components.*
 import com.scrap2stack.app.domain.model.Developer
 import com.scrap2stack.app.domain.model.Project
+import com.scrap2stack.app.ui.theme.AmberGold
+import com.scrap2stack.app.ui.theme.BrutalBorderWhite
+import com.scrap2stack.app.ui.theme.BrutalCanvasDark
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
+import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.NeonCyan
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
@@ -55,6 +65,7 @@ fun HomeScreen(
     }
 
     Scaffold(
+        containerColor = BrutalCanvasDark,
         topBar = {
             val user = (uiState as? HomeUiState.Success)?.user
             HomeHeader(
@@ -64,43 +75,55 @@ fun HomeScreen(
             )
         }
     ) { innerPadding ->
-        when (val state = uiState) {
-            is HomeUiState.Loading -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Box(
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .dotGridBackground()
+        ) {
+            when (val state = uiState) {
+                is HomeUiState.Loading -> {
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(130.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .shimmerEffect()
-                    )
-                    repeat(3) {
-                        ProjectCardSkeleton()
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(130.dp)
+                                .brutalCard(
+                                    cornerRadius = 16.dp,
+                                    containerColor = BrutalSurfaceDark,
+                                    borderColor = BrutalBorderWhite,
+                                    borderWidth = 2.dp,
+                                    shadowColor = BrutalShadowBlack
+                                )
+                                .shimmerEffect()
+                        )
+                        repeat(3) {
+                            ProjectCardSkeleton()
+                        }
                     }
                 }
-            }
-            is HomeUiState.Error -> {
-                ErrorView(
-                    message = state.message,
-                    onRetry = { viewModel.loadHomeData() },
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
-            is HomeUiState.Success -> {
-                HomeContent(
-                    innerPadding = innerPadding,
-                    user = state.user,
-                    recommendedProjects = state.recommendedProjects,
-                    trendingProjects = state.trendingProjects,
-                    onNavigateToProjectDetails = onNavigateToProjectDetails,
-                    onNavigateToCharms = onNavigateToCharms
-                )
+                is HomeUiState.Error -> {
+                    ErrorView(
+                        message = state.message,
+                        onRetry = { viewModel.loadHomeData() },
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+                is HomeUiState.Success -> {
+                    HomeContent(
+                        innerPadding = innerPadding,
+                        user = state.user,
+                        recommendedProjects = state.recommendedProjects,
+                        trendingProjects = state.trendingProjects,
+                        onNavigateToProjectDetails = onNavigateToProjectDetails,
+                        onNavigateToCharms = onNavigateToCharms
+                    )
+                }
             }
         }
     }
@@ -203,29 +226,20 @@ fun DeveloperPassCard(
     developerName: String,
     onClick: () -> Unit
 ) {
-    val passBrush = Brush.linearGradient(
-        listOf(
-            Color(0xFF131D33),
-            Color(0xFF0F172A),
-            Color(0xFF0A0F1D)
-        )
-    )
-    val borderBrush = Brush.linearGradient(
-        listOf(
-            ElectricMint.copy(alpha = 0.5f),
-            PrimaryIndigo.copy(alpha = 0.3f),
-            Color.White.copy(alpha = 0.08f)
-        )
-    )
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(passBrush)
-            .border(BorderStroke(1.dp, borderBrush), RoundedCornerShape(24.dp))
-            .bouncingClickable(scaleDown = 0.98f, onClick = onClick)
-            .padding(22.dp)
+            .tactileBrutalCard(
+                cornerRadius = 18.dp,
+                containerColor = BrutalSurfaceDark,
+                borderColor = BrutalBorderWhite,
+                borderWidth = 2.dp,
+                shadowColor = PrimaryIndigo,
+                shadowOffsetX = 5.dp,
+                shadowOffsetY = 5.dp,
+                onClick = onClick
+            )
+            .padding(20.dp)
     ) {
         Column {
             Row(
@@ -236,10 +250,15 @@ fun DeveloperPassCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.linearGradient(listOf(ElectricMint, RevivalEmerald))
+                            .size(40.dp)
+                            .brutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = ElectricMint,
+                                borderColor = BrutalShadowBlack,
+                                borderWidth = 2.dp,
+                                shadowColor = BrutalShadowBlack,
+                                shadowOffsetX = 2.dp,
+                                shadowOffsetY = 2.dp
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -247,24 +266,35 @@ fun DeveloperPassCard(
                             imageVector = Icons.Default.Bolt,
                             contentDescription = null,
                             modifier = Modifier.size(22.dp),
-                            tint = Color(0xFF080B11)
+                            tint = BrutalInkBlack
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(
-                            text = "DEVELOPER TIER 2",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 1.sp,
-                                fontSize = 10.sp
-                            ),
-                            color = ElectricMint
-                        )
+                        Box(
+                            modifier = Modifier
+                                .graphicsLayer { rotationZ = -2f }
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(AmberGold)
+                                .border(1.5.dp, BrutalShadowBlack, RoundedCornerShape(5.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "TIER 2",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Black,
+                                    letterSpacing = 0.6.sp,
+                                    fontSize = 10.sp
+                                ),
+                                color = BrutalInkBlack
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = "Code Alchemist",
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.Black,
                                 fontSize = 16.sp
                             ),
                             color = Color.White
@@ -273,10 +303,16 @@ fun DeveloperPassCard(
                 }
 
                 // Reputation Charms Counter Pill
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = ElectricMint.copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, ElectricMint.copy(alpha = 0.35f))
+                Box(
+                    modifier = Modifier.brutalCard(
+                        cornerRadius = 10.dp,
+                        containerColor = ElectricMint,
+                        borderColor = BrutalShadowBlack,
+                        borderWidth = 2.dp,
+                        shadowColor = BrutalShadowBlack,
+                        shadowOffsetX = 3.dp,
+                        shadowOffsetY = 3.dp
+                    )
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -286,22 +322,23 @@ fun DeveloperPassCard(
                             imageVector = Icons.Default.Stars,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
-                            tint = ElectricMint
+                            tint = BrutalInkBlack
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = "$charms",
                             style = MaterialTheme.typography.labelLarge.copy(
+                                fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Black,
                                 fontSize = 14.sp
                             ),
-                            color = ElectricMint
+                            color = BrutalInkBlack
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Tier Progress Bar
             Row(
@@ -311,37 +348,34 @@ fun DeveloperPassCard(
             ) {
                 Text(
                     text = "Next Tier: Stack Master",
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+                    color = Color.White.copy(alpha = 0.72f)
                 )
                 Text(
-                    text = "$charms / 200 Charms",
+                    text = "$charms / 200 CHARMS",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 11.sp
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp
                     ),
-                    color = Color.White.copy(alpha = 0.8f)
+                    color = ElectricMint
                 )
             }
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(Color.White.copy(alpha = 0.08f))
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(BrutalSurfaceRaised)
+                    .border(1.5.dp, BrutalBorderWhite.copy(alpha = 0.8f), RoundedCornerShape(5.dp))
             ) {
                 val progress = (charms / 200f).coerceIn(0.05f, 1f)
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .fillMaxWidth(progress)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(PrimaryIndigo, ElectricMint)
-                            )
-                        )
+                        .background(ElectricMint)
                 )
             }
         }
@@ -353,26 +387,20 @@ fun RecommendedProjectCard(
     project: Project,
     onClick: () -> Unit
 ) {
-    val highlightBorder = Brush.linearGradient(
-        listOf(
-            ElectricMint.copy(alpha = 0.45f),
-            PrimaryIndigo.copy(alpha = 0.35f),
-            Color.Transparent
-        )
-    )
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF131D33), Color(0xFF0F172A))
-                )
+            .tactileBrutalCard(
+                cornerRadius = 18.dp,
+                containerColor = BrutalSurfaceDark,
+                borderColor = BrutalBorderWhite,
+                borderWidth = 2.dp,
+                shadowColor = ElectricMint,
+                shadowOffsetX = 5.dp,
+                shadowOffsetY = 5.dp,
+                onClick = onClick
             )
-            .border(BorderStroke(1.dp, highlightBorder), RoundedCornerShape(22.dp))
-            .bouncingClickable(scaleDown = 0.98f, onClick = onClick)
-            .padding(20.dp)
+            .padding(18.dp)
     ) {
         Column {
             Row(
@@ -380,46 +408,60 @@ fun RecommendedProjectCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = PrimaryIndigo.copy(alpha = 0.15f),
-                    border = BorderStroke(1.dp, PrimaryIndigo.copy(alpha = 0.35f))
+                Box(
+                    modifier = Modifier.brutalCard(
+                        cornerRadius = 8.dp,
+                        containerColor = PrimaryIndigo,
+                        borderColor = BrutalShadowBlack,
+                        borderWidth = 1.5.dp,
+                        shadowColor = BrutalShadowBlack,
+                        shadowOffsetX = 2.dp,
+                        shadowOffsetY = 2.dp
+                    )
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
                             contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = PrimaryIndigoLight
+                            modifier = Modifier.size(13.dp),
+                            tint = Color.White
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = "Synergy Match",
+                            text = "SYNERGY MATCH",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 10.sp
                             ),
-                            color = PrimaryIndigoLight
+                            color = Color.White
                         )
                     }
                 }
-                
-                Surface(
-                    color = ElectricMint.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, ElectricMint.copy(alpha = 0.35f))
+
+                Box(
+                    modifier = Modifier.brutalCard(
+                        cornerRadius = 8.dp,
+                        containerColor = ElectricMint,
+                        borderColor = BrutalShadowBlack,
+                        borderWidth = 1.5.dp,
+                        shadowColor = BrutalShadowBlack,
+                        shadowOffsetX = 2.dp,
+                        shadowOffsetY = 2.dp
+                    )
                 ) {
                     Text(
-                        text = "Revival: ${project.revivalScore}%",
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        text = "SRVM ${project.revivalScore}%",
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Black,
-                            fontSize = 11.sp
+                            fontSize = 10.sp
                         ),
-                        color = ElectricMint
+                        color = BrutalInkBlack
                     )
                 }
             }
@@ -429,13 +471,15 @@ fun RecommendedProjectCard(
             Text(
                 text = project.name,
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 21.sp,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 20.sp,
                     letterSpacing = (-0.3).sp
                 ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 color = Color.White
             )
-            
+
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
@@ -443,14 +487,15 @@ fun RecommendedProjectCard(
                 style = MaterialTheme.typography.bodyMedium.copy(
                     lineHeight = 20.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
-                maxLines = 2
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
 
             Spacer(modifier = Modifier.height(14.dp))
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.horizontalScroll(rememberScrollState())
             ) {
                 project.requiredSkills.take(4).forEach { skill ->
@@ -466,19 +511,21 @@ fun CompactProjectCard(
     project: Project,
     onClick: () -> Unit
 ) {
-    val cardBorder = Brush.linearGradient(
-        listOf(Color.White.copy(alpha = 0.14f), Color.Transparent)
-    )
-
     Box(
         modifier = Modifier
-            .width(210.dp)
-            .height(130.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color(0xFF131D31))
-            .border(BorderStroke(1.dp, cardBorder), RoundedCornerShape(18.dp))
-            .bouncingClickable(scaleDown = 0.96f, onClick = onClick)
-            .padding(16.dp)
+            .width(214.dp)
+            .height(136.dp)
+            .tactileBrutalCard(
+                cornerRadius = 16.dp,
+                containerColor = BrutalSurfaceDark,
+                borderColor = BrutalBorderWhite,
+                borderWidth = 2.dp,
+                shadowColor = PrimaryIndigo,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp,
+                onClick = onClick
+            )
+            .padding(14.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -488,18 +535,24 @@ fun CompactProjectCard(
                 Text(
                     text = project.name,
                     style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         fontSize = 15.sp
                     ),
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     color = Color.White
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = project.technologies.take(2).joinToString(" • "),
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = ElectricMint.copy(alpha = 0.8f),
-                    maxLines = 1
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = ElectricMint,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -519,16 +572,20 @@ fun CompactProjectCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Revival",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        text = "REVIVAL",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = Color.White.copy(alpha = 0.6f)
                     )
                 }
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    tint = Color.White
                 )
             }
         }
@@ -544,17 +601,20 @@ fun HomeHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 18.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
             Text(
-                text = "Welcome back,",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = 13.sp
+                text = "WELCOME BACK //",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.8.sp,
+                    fontSize = 11.sp
                 ),
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                color = ElectricMint
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -571,11 +631,17 @@ fun HomeHeader(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
-                    .size(42.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.06f))
-                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), CircleShape)
-                    .bouncingClickable(scaleDown = 0.88f, onClick = onRefresh),
+                    .size(44.dp)
+                    .tactileBrutalCard(
+                        cornerRadius = 12.dp,
+                        containerColor = BrutalSurfaceRaised,
+                        borderColor = BrutalBorderWhite,
+                        borderWidth = 2.dp,
+                        shadowColor = ElectricMint,
+                        shadowOffsetX = 3.dp,
+                        shadowOffsetY = 3.dp,
+                        onClick = onRefresh
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

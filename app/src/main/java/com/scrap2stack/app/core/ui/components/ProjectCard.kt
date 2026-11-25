@@ -20,12 +20,20 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scrap2stack.app.domain.model.Project
 import com.scrap2stack.app.domain.model.ProjectStatus
+import com.scrap2stack.app.ui.theme.AmberGold
+import com.scrap2stack.app.ui.theme.BrutalBorderWhite
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
+import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
 import com.scrap2stack.app.ui.theme.NeonCyan
 import com.scrap2stack.app.ui.theme.PrimaryIndigo
@@ -48,13 +56,23 @@ fun ProjectCard(
     }
     var hasUpvoted by remember(project.id) { mutableStateOf(false) }
 
-    Scrap2StackCard(
+    Box(
         modifier = modifier
+            .fillMaxWidth()
             .padding(vertical = 6.dp)
-            .bouncingClickable(scaleDown = 0.98f, onClick = onClick)
+            .tactileBrutalCard(
+                cornerRadius = 16.dp,
+                containerColor = BrutalSurfaceDark,
+                borderColor = BrutalBorderWhite,
+                borderWidth = 2.dp,
+                shadowColor = if (project.status == ProjectStatus.COMPLETED) ElectricMint else PrimaryIndigo,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp,
+                onClick = onClick
+            )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(18.dp)
         ) {
             // Header Row: Project Name & Status Badge
             Row(
@@ -67,8 +85,8 @@ fun ProjectCard(
                         Text(
                             text = project.name,
                             style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 19.sp,
                                 letterSpacing = (-0.3).sp
                             ),
                             maxLines = 1,
@@ -80,16 +98,18 @@ fun ProjectCard(
                             Spacer(modifier = Modifier.width(8.dp))
                             Box(
                                 modifier = Modifier
+                                    .graphicsLayer { rotationZ = -2f }
                                     .clip(RoundedCornerShape(6.dp))
-                                    .background(Color(0xFFFBBF24).copy(alpha = 0.2f))
-                                    .border(0.5.dp, Color(0xFFFBBF24).copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                    .background(AmberGold)
+                                    .border(1.5.dp, BrutalShadowBlack, RoundedCornerShape(6.dp))
                                     .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = "🏆 SHIPPED",
+                                    text = "SHIPPED",
                                     style = MaterialTheme.typography.labelSmall.copy(
-                                        color = Color(0xFFFBBF24),
-                                        fontWeight = FontWeight.ExtraBold,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = BrutalInkBlack,
+                                        fontWeight = FontWeight.Black,
                                         fontSize = 9.sp
                                     )
                                 )
@@ -98,22 +118,23 @@ fun ProjectCard(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = project.technologies.take(4).joinToString("  •  "),
+                        text = project.technologies.take(4).joinToString(" • "),
                         style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 12.sp
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = ElectricMint.copy(alpha = 0.85f)
+                        color = ElectricMint
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.width(12.dp))
 
                 val statusColor = when (project.status) {
                     ProjectStatus.IDEA -> PrimaryIndigoLight
-                    ProjectStatus.INCOMPLETE -> Color(0xFFF59E0B)
+                    ProjectStatus.INCOMPLETE -> AmberGold
                     ProjectStatus.ABANDONED -> StatusAbandoned
                     ProjectStatus.PAUSED -> Color(0xFF94A3B8)
                     ProjectStatus.MVP_INCOMPLETE -> ElectricMint
@@ -134,7 +155,7 @@ fun ProjectCard(
                 ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f)
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
             )
 
             // Required Skills Badges
@@ -150,16 +171,27 @@ fun ProjectCard(
                         SkillChip(skill = skill)
                     }
                     if (project.requiredSkills.size > 4) {
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = Color.White.copy(alpha = 0.05f),
-                            modifier = Modifier.padding(bottom = 6.dp)
+                        Box(
+                            modifier = Modifier
+                                .padding(bottom = 6.dp)
+                                .brutalCard(
+                                    cornerRadius = 10.dp,
+                                    containerColor = BrutalSurfaceRaised,
+                                    borderColor = Color(0xFF475569),
+                                    borderWidth = 1.5.dp,
+                                    shadowColor = BrutalShadowBlack,
+                                    shadowOffsetX = 2.dp,
+                                    shadowOffsetY = 2.dp
+                                )
                         ) {
                             Text(
                                 text = "+${project.requiredSkills.size - 4}",
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Black
+                                ),
+                                color = Color.White.copy(alpha = 0.75f)
                             )
                         }
                     }
@@ -168,8 +200,8 @@ fun ProjectCard(
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 12.dp),
-                thickness = 1.dp,
-                color = Color.White.copy(alpha = 0.07f)
+                thickness = 1.5.dp,
+                color = Color.White.copy(alpha = 0.14f)
             )
 
             // Footer: Revival Meter & Last Active Info
@@ -189,12 +221,13 @@ fun ProjectCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Revival Potential",
+                            text = "REVIVAL SCORE",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
                             ),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
@@ -210,26 +243,22 @@ fun ProjectCard(
                         Spacer(modifier = Modifier.width(10.dp))
                         Box(
                             modifier = Modifier
-                                .width(70.dp)
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(Color.White.copy(alpha = 0.08f))
+                                .width(76.dp)
+                                .height(10.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(BrutalSurfaceRaised)
+                                .border(1.5.dp, BrutalBorderWhite.copy(alpha = 0.7f), RoundedCornerShape(5.dp))
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxHeight()
-                                    .fillMaxWidth((project.revivalScore / 100f).coerceIn(0.05f, 1f))
-                                    .clip(RoundedCornerShape(3.dp))
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            listOf(RevivalEmerald, ElectricMint)
-                                        )
-                                    )
+                                    .fillMaxWidth((project.revivalScore / 100f).coerceIn(0.08f, 1f))
+                                    .background(ElectricMint)
                             )
                         }
                     }
                 }
-                
+
                 // Upvote & Last Active info
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -237,32 +266,34 @@ fun ProjectCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (hasUpvoted) Color(0xFFEC4899).copy(alpha = 0.2f) else Color.White.copy(alpha = 0.06f))
-                            .border(
-                                1.dp,
-                                if (hasUpvoted) Color(0xFFEC4899) else Color.White.copy(alpha = 0.12f),
-                                RoundedCornerShape(12.dp)
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = if (hasUpvoted) Color(0xFFEC4899) else BrutalSurfaceRaised,
+                                borderColor = if (hasUpvoted) BrutalShadowBlack else BrutalBorderWhite,
+                                borderWidth = 1.5.dp,
+                                shadowColor = BrutalShadowBlack,
+                                shadowOffsetX = 2.dp,
+                                shadowOffsetY = 2.dp,
+                                onClick = {
+                                    hasUpvoted = !hasUpvoted
+                                    upvoteCount += if (hasUpvoted) 1 else -1
+                                }
                             )
-                            .bouncingClickable {
-                                hasUpvoted = !hasUpvoted
-                                upvoteCount += if (hasUpvoted) 1 else -1
-                            }
                             .padding(horizontal = 9.dp, vertical = 5.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = if (hasUpvoted) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Upvote",
-                                tint = if (hasUpvoted) Color(0xFFEC4899) else Color(0xFF94A3B8),
+                                tint = if (hasUpvoted) BrutalInkBlack else Color.White,
                                 modifier = Modifier.size(13.dp)
                             )
                             Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = "$upvoteCount",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = if (hasUpvoted) Color(0xFFEC4899) else Color(0xFF94A3B8),
-                                    fontWeight = FontWeight.Bold,
+                                    color = if (hasUpvoted) BrutalInkBlack else Color.White,
+                                    fontWeight = FontWeight.Black,
                                     fontSize = 11.sp
                                 )
                             )
@@ -280,18 +311,18 @@ fun ProjectCard(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "Last Active",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                             )
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = project.lastActivity.ifBlank { "Recently" },
                             style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
                             ),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
+                            color = Color.White
                         )
                     }
                 }

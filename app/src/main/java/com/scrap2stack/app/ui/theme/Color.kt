@@ -28,6 +28,16 @@ val GlassWhiteBorderSubtle = Color(0x12FFFFFF)
 val ShimmerBaseDark = Color(0xFF131D31)
 val ShimmerHighlightDark = Color(0xFF233252)
 
+// Neo-Brutalist Stack Pop Tokens
+val BrutalCanvasDark = Color(0xFF0D1017)      // Deep charcoal backdrop
+val BrutalSurfaceDark = Color(0xFF161B26)     // High-contrast card surface
+val BrutalSurfaceRaised = Color(0xFF1E2534)   // Elevated secondary surface
+val BrutalInkBlack = Color(0xFF05070D)        // Jet-black ink on Mint/Amber stickers
+val BrutalBorderWhite = Color(0xFFF1F5F9)     // Crisp 2dp light border on dark cards
+val BrutalShadowBlack = Color(0xFF000000)     // Zero-blur solid offset shadow
+val BrutalCanvasLight = Color(0xFFF4F2EC)     // Warm neo-brutalist paper canvas
+val BrutalSurfaceLight = Color(0xFFFFFFFF)    // Crisp pure white card surface
+
 // Premium Light Theme Surfaces (Crisp Studio Light)
 val SlateBackgroundLight = Color(0xFFF8FAFC) // Slate 50
 val SlateSurfaceLight = Color(0xFFFFFFFF)    // Pure White

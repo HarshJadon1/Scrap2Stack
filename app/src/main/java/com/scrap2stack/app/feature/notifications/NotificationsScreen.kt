@@ -21,19 +21,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scrap2stack.app.core.ui.components.Avatar
-import com.scrap2stack.app.core.ui.components.bouncingClickable
-import com.scrap2stack.app.core.ui.components.glassSurface
+import com.scrap2stack.app.core.ui.components.brutalCard
+import com.scrap2stack.app.core.ui.components.dotGridBackground
+import com.scrap2stack.app.core.ui.components.tactileBrutalCard
 import com.scrap2stack.app.domain.model.*
 import com.scrap2stack.app.feature.matching.CollaborationUiState
 import com.scrap2stack.app.feature.matching.CollaborationViewModel
 import com.scrap2stack.app.feature.matching.RequestsUiState
+import com.scrap2stack.app.ui.theme.AmberGold
+import com.scrap2stack.app.ui.theme.BrutalBorderWhite
+import com.scrap2stack.app.ui.theme.BrutalCanvasDark
+import com.scrap2stack.app.ui.theme.BrutalInkBlack
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
+import com.scrap2stack.app.ui.theme.BrutalSurfaceRaised
 import com.scrap2stack.app.ui.theme.ElectricMint
-import com.scrap2stack.app.ui.theme.GlassWhiteBorder
+import com.scrap2stack.app.ui.theme.PrimaryIndigo
 import kotlinx.coroutines.launch
 
 @Composable
@@ -225,15 +234,16 @@ fun NotificationsScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color(0xFF080B11)
+        containerColor = BrutalCanvasDark
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .dotGridBackground()
                 .padding(innerPadding)
                 .padding(horizontal = 20.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Screen Header
             Row(
@@ -243,9 +253,19 @@ fun NotificationsScreen(
             ) {
                 Column {
                     Text(
+                        text = "ACTIVITY FEED //",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.8.sp,
+                            fontSize = 11.sp
+                        ),
+                        color = ElectricMint
+                    )
+                    Text(
                         text = "Alerts & Collabs",
                         style = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.Black,
                             color = Color.White
                         )
                     )
@@ -258,28 +278,51 @@ fun NotificationsScreen(
                 }
 
                 if (selectedTab == 2) {
-                    IconButton(onClick = { notificationsViewModel.markAllAsRead() }) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = BrutalSurfaceRaised,
+                                borderColor = BrutalBorderWhite,
+                                borderWidth = 2.dp,
+                                shadowColor = ElectricMint,
+                                shadowOffsetX = 3.dp,
+                                shadowOffsetY = 3.dp,
+                                onClick = { notificationsViewModel.markAllAsRead() }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             imageVector = Icons.Default.DoneAll,
                             contentDescription = "Mark all as read",
-                            tint = ElectricMint
+                            tint = ElectricMint,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Modern 3-Segment Tab Bar
+            // Neo-Brutalist 3-Segment Tab Bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .glassSurface(shape = RoundedCornerShape(16.dp))
-                    .padding(4.dp)
+                    .brutalCard(
+                        cornerRadius = 14.dp,
+                        containerColor = BrutalSurfaceDark,
+                        borderColor = BrutalBorderWhite,
+                        borderWidth = 2.dp,
+                        shadowColor = BrutalShadowBlack,
+                        shadowOffsetX = 4.dp,
+                        shadowOffsetY = 4.dp
+                    )
+                    .padding(5.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     tabs.forEachIndexed { index, title ->
                         val isSelected = selectedTab == index
@@ -291,18 +334,33 @@ fun NotificationsScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) ElectricMint else Color.Transparent)
-                                .bouncingClickable { selectedTab = index }
-                                .padding(vertical = 10.dp),
+                                .then(
+                                    if (isSelected) {
+                                        Modifier.brutalCard(
+                                            cornerRadius = 10.dp,
+                                            containerColor = ElectricMint,
+                                            borderColor = BrutalShadowBlack,
+                                            borderWidth = 1.5.dp,
+                                            shadowColor = BrutalShadowBlack,
+                                            shadowOffsetX = 2.dp,
+                                            shadowOffsetY = 2.dp
+                                        )
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                                .clickable { selectedTab = index }
+                                .padding(vertical = 9.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = title,
+                                    text = title.uppercase(),
                                     style = MaterialTheme.typography.labelMedium.copy(
-                                        color = if (isSelected) Color.Black else Color(0xFF94A3B8),
-                                        fontWeight = FontWeight.Bold
+                                        fontFamily = FontFamily.Monospace,
+                                        color = if (isSelected) BrutalInkBlack else Color(0xFFCBD5E1),
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 11.sp
                                     )
                                 )
                                 if (pendingCount > 0) {
@@ -311,14 +369,14 @@ fun NotificationsScreen(
                                         modifier = Modifier
                                             .size(18.dp)
                                             .clip(CircleShape)
-                                            .background(if (isSelected) Color.Black else ElectricMint),
+                                            .background(if (isSelected) BrutalInkBlack else ElectricMint),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
                                             text = "$pendingCount",
                                             style = MaterialTheme.typography.labelSmall.copy(
-                                                color = if (isSelected) ElectricMint else Color.Black,
-                                                fontWeight = FontWeight.ExtraBold,
+                                                color = if (isSelected) ElectricMint else BrutalInkBlack,
+                                                fontWeight = FontWeight.Black,
                                                 fontSize = 10.sp
                                             )
                                         )
@@ -467,8 +525,16 @@ fun CyberReceivedCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glassSurface(shape = RoundedCornerShape(20.dp))
-            .padding(18.dp)
+            .brutalCard(
+                cornerRadius = 16.dp,
+                containerColor = BrutalSurfaceDark,
+                borderColor = BrutalBorderWhite,
+                borderWidth = 2.dp,
+                shadowColor = PrimaryIndigo,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
+            .padding(16.dp)
     ) {
         Column {
             Row(
@@ -481,42 +547,40 @@ fun CyberReceivedCard(
                     Text(
                         text = senderName,
                         style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Black,
                             color = Color.White
                         )
                     )
                     Text(
                         text = "Project: $projectName",
                         style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
                             color = ElectricMint,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
                     )
                 }
 
-                // Status chip
+                // Status sticker chip
                 val statusBg = when (request.status) {
-                    CollaborationStatus.ACCEPTED -> ElectricMint.copy(alpha = 0.2f)
-                    CollaborationStatus.REJECTED -> Color(0xFFEF4444).copy(alpha = 0.2f)
-                    else -> Color(0xFF38BDF8).copy(alpha = 0.15f)
-                }
-                val statusColor = when (request.status) {
                     CollaborationStatus.ACCEPTED -> ElectricMint
                     CollaborationStatus.REJECTED -> Color(0xFFEF4444)
-                    else -> Color(0xFF38BDF8)
+                    else -> AmberGold
                 }
 
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(6.dp))
                         .background(statusBg)
+                        .border(1.5.dp, BrutalShadowBlack, RoundedCornerShape(6.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = request.status.name,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = statusColor,
-                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            color = BrutalInkBlack,
+                            fontWeight = FontWeight.Black,
                             fontSize = 10.sp
                         )
                     )
@@ -530,16 +594,17 @@ fun CyberReceivedCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(Color.White.copy(alpha = 0.08f))
-                        .border(0.5.dp, GlassWhiteBorder, RoundedCornerShape(6.dp))
+                        .background(BrutalSurfaceRaised)
+                        .border(1.dp, BrutalBorderWhite.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "Proposed Role: ${request.proposedRole}",
+                        text = "ROLE: ${request.proposedRole}",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = Color(0xFFCBD5E1),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
+                            fontFamily = FontFamily.Monospace,
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     )
                 }
@@ -547,7 +612,7 @@ fun CyberReceivedCard(
                 Text(
                     text = request.createdAt,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = Color(0xFF64748B),
+                        color = Color(0xFF94A3B8),
                         fontSize = 11.sp
                     )
                 )
@@ -559,13 +624,14 @@ fun CyberReceivedCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFF0C1322))
+                        .background(BrutalCanvasDark)
+                        .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
                         .padding(12.dp)
                 ) {
                     Text(
                         text = "\"${request.message}\"",
                         style = MaterialTheme.typography.bodySmall.copy(
-                            color = Color(0xFF94A3B8),
+                            color = Color(0xFFCBD5E1),
                             lineHeight = 18.sp
                         )
                     )
@@ -582,18 +648,25 @@ fun CyberReceivedCard(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.06f))
-                            .border(1.dp, GlassWhiteBorder, RoundedCornerShape(12.dp))
-                            .bouncingClickable { onReject() }
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = BrutalSurfaceRaised,
+                                borderColor = BrutalBorderWhite,
+                                borderWidth = 1.5.dp,
+                                shadowColor = BrutalShadowBlack,
+                                shadowOffsetX = 3.dp,
+                                shadowOffsetY = 3.dp,
+                                onClick = onReject
+                            )
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Decline",
+                            text = "DECLINE",
                             style = MaterialTheme.typography.labelMedium.copy(
-                                color = Color(0xFF94A3B8),
-                                fontWeight = FontWeight.SemiBold
+                                fontFamily = FontFamily.Monospace,
+                                color = Color.White,
+                                fontWeight = FontWeight.Black
                             )
                         )
                     }
@@ -602,24 +675,28 @@ fun CyberReceivedCard(
                     Box(
                         modifier = Modifier
                             .weight(1.5f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(ElectricMint, Color(0xFF059669))
-                                )
+                            .tactileBrutalCard(
+                                cornerRadius = 10.dp,
+                                containerColor = ElectricMint,
+                                borderColor = BrutalShadowBlack,
+                                borderWidth = 2.dp,
+                                shadowColor = BrutalShadowBlack,
+                                shadowOffsetX = 3.dp,
+                                shadowOffsetY = 3.dp,
+                                onClick = onAccept
                             )
-                            .bouncingClickable { onAccept() }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Check, contentDescription = null, tint = BrutalInkBlack, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Accept Invitation",
+                                text = "ACCEPT INVITE",
                                 style = MaterialTheme.typography.labelMedium.copy(
-                                    color = Color.Black,
-                                    fontWeight = FontWeight.Bold
+                                    fontFamily = FontFamily.Monospace,
+                                    color = BrutalInkBlack,
+                                    fontWeight = FontWeight.Black
                                 )
                             )
                         }
@@ -642,8 +719,16 @@ fun CyberSentCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glassSurface(shape = RoundedCornerShape(20.dp))
-            .padding(18.dp)
+            .brutalCard(
+                cornerRadius = 16.dp,
+                containerColor = BrutalSurfaceDark,
+                borderColor = BrutalBorderWhite,
+                borderWidth = 2.dp,
+                shadowColor = BrutalShadowBlack,
+                shadowOffsetX = 4.dp,
+                shadowOffsetY = 4.dp
+            )
+            .padding(16.dp)
     ) {
         Column {
             Row(
@@ -656,30 +741,33 @@ fun CyberSentCard(
                     Text(
                         text = "Sent to: $receiverName",
                         style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Black,
                             color = Color.White
                         )
                     )
                     Text(
                         text = "Project: $projectName",
                         style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
                             color = ElectricMint,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
                     )
                 }
 
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White.copy(alpha = 0.08f))
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (isPending) AmberGold else ElectricMint)
+                        .border(1.5.dp, BrutalShadowBlack, RoundedCornerShape(6.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = request.status.name,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = if (isPending) Color(0xFFFBBF24) else ElectricMint,
-                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            color = BrutalInkBlack,
+                            fontWeight = FontWeight.Black,
                             fontSize = 10.sp
                         )
                     )
@@ -699,17 +787,24 @@ fun CyberSentCard(
                 Spacer(modifier = Modifier.height(12.dp))
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.06f))
-                        .border(1.dp, GlassWhiteBorder, RoundedCornerShape(10.dp))
-                        .bouncingClickable { onCancel() }
+                        .tactileBrutalCard(
+                            cornerRadius = 10.dp,
+                            containerColor = BrutalSurfaceRaised,
+                            borderColor = Color(0xFFF87171),
+                            borderWidth = 1.5.dp,
+                            shadowColor = BrutalShadowBlack,
+                            shadowOffsetX = 2.dp,
+                            shadowOffsetY = 2.dp,
+                            onClick = onCancel
+                        )
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = "Cancel Invitation",
+                        text = "CANCEL INVITATION",
                         style = MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = FontFamily.Monospace,
                             color = Color(0xFFF87171),
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Black
                         )
                     )
                 }
@@ -735,7 +830,7 @@ fun CyberActivityCard(
     }
 
     val iconTint = when {
-        isCharms -> Color(0xFFFBBF24)
+        isCharms -> AmberGold
         isMilestone -> Color(0xFF38BDF8)
         isGithub -> Color(0xFFA855F7)
         else -> ElectricMint
@@ -744,9 +839,17 @@ fun CyberActivityCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .glassSurface(shape = RoundedCornerShape(16.dp))
-            .bouncingClickable { onClick() }
-            .padding(16.dp)
+            .tactileBrutalCard(
+                cornerRadius = 14.dp,
+                containerColor = BrutalSurfaceDark,
+                borderColor = BrutalBorderWhite,
+                borderWidth = 2.dp,
+                shadowColor = iconTint,
+                shadowOffsetX = 3.dp,
+                shadowOffsetY = 3.dp,
+                onClick = onClick
+            )
+            .padding(14.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -755,14 +858,21 @@ fun CyberActivityCard(
             Box(
                 modifier = Modifier
                     .size(38.dp)
-                    .clip(CircleShape)
-                    .background(iconTint.copy(alpha = 0.15f)),
+                    .brutalCard(
+                        cornerRadius = 10.dp,
+                        containerColor = iconTint,
+                        borderColor = BrutalShadowBlack,
+                        borderWidth = 1.5.dp,
+                        shadowColor = BrutalShadowBlack,
+                        shadowOffsetX = 2.dp,
+                        shadowOffsetY = 2.dp
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = iconTint,
+                    tint = BrutalInkBlack,
                     modifier = Modifier.size(20.dp)
                 )
             }

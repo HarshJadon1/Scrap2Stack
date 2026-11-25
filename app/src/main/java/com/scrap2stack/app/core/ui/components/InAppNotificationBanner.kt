@@ -26,6 +26,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.scrap2stack.app.ui.theme.BrutalBorderWhite
+import com.scrap2stack.app.ui.theme.BrutalShadowBlack
+import com.scrap2stack.app.ui.theme.BrutalSurfaceDark
 import com.scrap2stack.app.ui.theme.ElectricMint
 import kotlinx.coroutines.delay
 
@@ -63,12 +66,19 @@ fun InAppNotificationBanner(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .glassSurface(shape = RoundedCornerShape(18.dp))
-                    .border(1.dp, ElectricMint.copy(alpha = 0.6f), RoundedCornerShape(18.dp))
-                    .bouncingClickable {
-                        onClick()
-                        onDismiss()
-                    }
+                    .tactileBrutalCard(
+                        cornerRadius = 16.dp,
+                        containerColor = BrutalSurfaceDark,
+                        borderColor = ElectricMint,
+                        borderWidth = 2.dp,
+                        shadowColor = BrutalShadowBlack,
+                        shadowOffsetX = 4.dp,
+                        shadowOffsetY = 4.dp,
+                        onClick = {
+                            onClick()
+                            onDismiss()
+                        }
+                    )
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Row(
